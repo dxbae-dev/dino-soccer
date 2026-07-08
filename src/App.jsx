@@ -3,6 +3,7 @@ import { useState } from "react";
 import PhaserGame from "./components/PhaserGame";
 import MainMenu from "./components/MainMenu";
 import InfoScreen from "./components/InfoScreen";
+import GameUI from "./components/UI/GameUI";
 
 function App() {
   // Ahora manejamos varias pantallas, no solo un booleano
@@ -25,17 +26,9 @@ function App() {
         {currentScreen === "menu" && <MainMenu setScreen={setCurrentScreen} />}
 
         {currentScreen === "game" && (
-          // position absolute y z-20 aseguran que el juego cubra toda la pantalla
           <div className="absolute inset-0 w-full h-full flex flex-col z-20">
-            {/* Botón flotante en la esquina superior derecha */}
-            <button
-              onClick={() => setCurrentScreen("menu")}
-              className="absolute top-6 right-6 px-4 py-2 text-white font-mono uppercase text-xs border border-white/50 hover:bg-white/20 transition-colors z-30"
-            >
-              Salir del partido
-            </button>
-
-            {/* El canvas del juego */}
+            
+            <GameUI onExit={() => setCurrentScreen("menu")} />
             <PhaserGame />
           </div>
         )}
