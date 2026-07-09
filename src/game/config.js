@@ -15,7 +15,7 @@ const config = {
         default: 'arcade',
         arcade: {
             gravity: { y: 1200 }, // Gravedad ideal para el salto dinámico del jugador
-            debug: false // Cambia a true si necesitas volver a calibrar alguna hitbox
+            debug: true // Cambia a true si necesitas volver a calibrar alguna hitbox
         }
     },
     scene: [PlayScene] // Tu lista de escenas ordenadas

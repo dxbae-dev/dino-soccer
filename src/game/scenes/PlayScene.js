@@ -10,7 +10,7 @@ export default class PlayScene extends Phaser.Scene {
 
   preload() {
     this.load.spritesheet("player", "/assets/player.png", { frameWidth: 84, frameHeight: 96 });
-    this.load.image("cone", "/assets/obstaculo-1.png");
+    this.load.spritesheet("obstacles", "/assets/obstacles.png", { frameWidth: 64, frameHeight: 64 });
   }
 
   create() {
@@ -56,31 +56,29 @@ export default class PlayScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard.createCursorKeys();
 
-    this.input.on('pointerdown', (pointer) => {
-        if (!this.gameStarted || this.isPaused || this.isGameOver) return;
-        this.touchStartX = pointer.x;
-        this.touchStartY = pointer.y;
-        this.isSwiping = false;
-        this.player.triggerJump(); 
-    });
-
-    this.input.on('pointermove', (pointer) => {
-        if (!pointer.isDown || !this.gameStarted || this.isPaused || this.isGameOver || this.isSwiping) return;
-        
-        const swipeX = pointer.x - this.touchStartX;
-        const swipeY = pointer.y - this.touchStartY;
-        
-        if (Math.abs(swipeX) > 40 || Math.abs(swipeY) > 40) {
-            this.isSwiping = true;
-            
-            if (Math.abs(swipeX) > Math.abs(swipeY)) {
-                if (swipeX > 40 && this.feverReady) this.activateFever();
-                else if (swipeX < -40 && this.brakeCooldown <= 0) this.activateBrake();
-            } else if (Math.abs(swipeY) > Math.abs(swipeX) && swipeY > 40) {
-                this.player.triggerSlide();
-            }
+    this.virtualInput = { up: false, down: false, justUp: false };
+    
+    this.input.on('pointerdown', () => {
+        if (!this.gameStarted && !this.isPaused && !this.isGameOver) {
+            this.startGame();
         }
     });
+
+    this.handleVirtualInput = (action, isPressed) => {
+        if (!this.gameStarted || this.isPaused || this.isGameOver) return;
+
+        if (action === 'jump') {
+            this.virtualInput.up = isPressed;
+            if (isPressed) this.virtualInput.justUp = true;
+        } else if (action === 'slide') {
+            this.virtualInput.down = isPressed;
+        } else if (action === 'brake' && isPressed && this.brakeCooldown <= 0) {
+            this.activateBrake();
+        } else if (action === 'fever' && isPressed && this.feverReady) {
+            this.activateFever();
+        }
+    };
+    EventBus.on("virtual-input", this.handleVirtualInput);
 
     this.startText = this.add.text(width / 2, height / 2 - 50, 'TOCA LA PANTALLA PARA JUGAR', {
       fontSize: '20px', fontFamily: 'monospace', fill: '#000000', backgroundColor: '#ffffff', padding: { x: 15, y: 10 }
@@ -98,6 +96,7 @@ export default class PlayScene extends Phaser.Scene {
       this.saveScore();
       EventBus.off("toggle-pause", this.handlePause);
       EventBus.off("trigger-fever", this.handleTriggerFever);
+      EventBus.off("virtual-input", this.handleVirtualInput); // Limpiar evento
     });
 
     EventBus.emit("update-lives", this.lives);
@@ -199,7 +198,8 @@ export default class PlayScene extends Phaser.Scene {
     this.currentSpeed = Math.max(-1000, Math.min(this.initialSpeed, calculatedSpeed));
 
     this.player.setAnimationSpeed(this.currentSpeed / this.initialSpeed);
-    this.player.handleInput(this.cursors, delta);
+
+    this.player.handleInput(this.cursors, this.virtualInput, delta);
 
     this.obstacleManager.update(this.currentSpeed, this.player.x, () => {
       this.score += 50;
@@ -210,8 +210,11 @@ export default class PlayScene extends Phaser.Scene {
   }
 
   hitObstacle(player, obstacle) {
+    // Si el obstáculo ya está siendo destruido, no hacemos nada
+    if (!obstacle.body.enable) return;
+
     if (player.isCelebrating) {
-        obstacle.destroy();
+        this.destroyObstacleAnim(obstacle);
         this.cameras.main.shake(100, 0.01);
         this.score += 100;
         EventBus.emit("show-damage", "+100 FIEBRE");
@@ -220,11 +223,17 @@ export default class PlayScene extends Phaser.Scene {
 
     if (player.postFeverInvincible) return; 
 
+    // Apagamos la colisión instantáneamente para no recibir daño múltiple
     obstacle.body.enable = false;
     this.player.takeDamage();
 
-    if (obstacle.texture.key === "cone") {
-      obstacle.destroy();
+    // Como ambos usan "obstacles", verificamos por el frame (0 es el cono, 1-3 es el dron)
+    const isCone = obstacle.frame.name === 0;
+
+    // Ejecutamos la nueva animación de destrucción
+    this.destroyObstacleAnim(obstacle);
+
+    if (isCone) {
       this.score -= 100;
       EventBus.emit("show-damage", "-100");
 
@@ -239,12 +248,30 @@ export default class PlayScene extends Phaser.Scene {
       EventBus.emit("update-lives", this.lives);
 
       if (this.lives === 1) {
-        player.setTint(0xaaaaaa); 
+        EventBus.emit("show-card", "yellow");
+        player.setTint(0xffff00); 
         this.time.delayedCall(800, () => player.clearTint());
       } else if (this.lives <= 0) {
+        EventBus.emit("show-card", "red");
         this.triggerGameOver();
       }
     }
+  }
+
+  // NUEVA FUNCIÓN: Añádela justo debajo de hitObstacle
+  destroyObstacleAnim(obstacle) {
+      this.tweens.add({
+          targets: obstacle,
+          scaleX: 0, // Se encoje
+          scaleY: 0,
+          alpha: 0,  // Se vuelve transparente
+          angle: 180, // Da media vuelta (efecto de volcar)
+          duration: 250, // Muy rápido (250ms)
+          ease: 'Back.easeIn',
+          onComplete: () => {
+              if (obstacle) obstacle.destroy();
+          }
+      });
   }
 
   togglePause(isPausedState) {
