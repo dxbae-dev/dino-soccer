@@ -1,11 +1,11 @@
 import Phaser from "phaser";
 
 export default class ObstacleManager {
-  constructor(scene) {
+  constructor(scene, scale = 1.5) {
     this.scene = scene;
+    this.baseScale = scale;
     this.group = scene.physics.add.group();
 
-    // Creamos la animación del dron una sola vez en el constructor
     if (!this.scene.anims.exists("drone_fly")) {
       this.scene.anims.create({
         key: "drone_fly",
@@ -14,47 +14,33 @@ export default class ObstacleManager {
           end: 3,
         }),
         frameRate: 12,
-        repeat: -1, // Loop infinito
+        repeat: -1, 
       });
     }
   }
 
-  spawn(currentSpeed) {
-    const width =
-      this.scene.scale.width > 0 ? this.scene.scale.width : window.innerWidth;
-    const height =
-      this.scene.scale.height > 0
-        ? this.scene.scale.height
-        : window.innerHeight;
-    const groundTop = height - 32;
-
+  spawn(currentSpeed, groundY) {
+    const width = this.scene.scale.width > 0 ? this.scene.scale.width : window.innerWidth;
     const isAerial = Phaser.Math.Between(1, 100) > 70;
 
     let obstacle;
 
     if (isAerial) {
-      // DRON (Volador)
-      // Generamos una altura aleatoria entre -45 (muy bajo, ideal para saltar por encima)
-      // y -85 (alto, ideal para barrerse por debajo)
       const randomHeight = Phaser.Math.Between(45, 85);
 
       obstacle = this.group.create(
         width + 50,
-        groundTop - randomHeight,
+        groundY - randomHeight,
         "obstacles",
         1,
       );
       obstacle.setOrigin(0.5, 1);
-      obstacle.setScale(1.5);
+      obstacle.setScale(this.baseScale);
       obstacle.play("drone_fly");
 
-      // HITBOX JUSTA Y REAL: Solo cubrimos el cuerpo del dron
       obstacle.body.setSize(obstacle.width * 0.7, obstacle.height * 0.5);
-
-      // Centramos la hitbox en la imagen del dron (quitamos la barrera invisible hacia arriba)
       obstacle.body.setOffset(obstacle.width * 0.15, obstacle.height * 0.25);
 
-      // Animación de flotación (Bobbing) - Hacemos que el movimiento sea sutil
       this.scene.tweens.add({
         targets: obstacle,
         y: obstacle.y - Phaser.Math.Between(10, 20),
@@ -64,10 +50,9 @@ export default class ObstacleManager {
         ease: "Sine.easeInOut",
       });
     } else {
-      // CONO (Terrestre) - Forzamos el frame 0 estático
-      obstacle = this.group.create(width + 50, groundTop, "obstacles", 0);
+      obstacle = this.group.create(width + 50, groundY, "obstacles", 0);
       obstacle.setOrigin(0.5, 1);
-      obstacle.setScale(1.2);
+      obstacle.setScale(this.baseScale * 0.8);
 
       obstacle.body.setSize(obstacle.width * 0.6, obstacle.height * 0.8);
       obstacle.body.setOffset(obstacle.width * 0.2, obstacle.height * 0.2);

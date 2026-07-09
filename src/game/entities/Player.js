@@ -1,13 +1,15 @@
 import Phaser from "phaser";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene, x, y) {
+  constructor(scene, x, y, scale = 1.5) {
     super(scene, x, y, "player");
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.setScale(1.5);
+    this.baseScale = scale;
+    this.setScale(this.baseScale);
+    
     this.body.setSize(40, 80);
     this.body.setOffset(22, 16);
     this.setCollideWorldBounds(true);
@@ -73,7 +75,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.scene.tweens.add({
       targets: this,
-      scale: 1.6,
+      scale: this.baseScale * 1.1,
       yoyo: true,
       repeat: -1,
       duration: 300,
@@ -82,7 +84,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(duration, () => {
       this.isCelebrating = false;
       this.scene.tweens.killTweensOf(this);
-      this.setScale(1.5);
+      this.setScale(this.baseScale);
 
       this.postFeverInvincible = true;
       this.scene.tweens.add({
@@ -107,14 +109,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // Coyote time (tiempo de gracia para saltar tras caer de una plataforma)
     if (this.body.touching.down) {
       this.coyoteTime = 100;
     } else {
       this.coyoteTime -= delta;
     }
 
-    // Consolidar inputs físicos y virtuales
     const isUpJustPressed =
       Phaser.Input.Keyboard.JustDown(cursors.space) ||
       Phaser.Input.Keyboard.JustDown(cursors.up) ||
@@ -129,12 +129,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.jumpBuffer -= delta;
     }
 
-    // Limpiamos el trigger virtual para que no se dispare múltiples veces
     virtualInput.justUp = false;
 
     const isFastFalling = isDownHeld || this.slideFlag;
 
-    // Iniciar Salto
     if (this.jumpBuffer > 0 && this.coyoteTime > 0) {
       this.setVelocityY(-650);
       this.jumpBuffer = 0;
@@ -142,7 +140,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.slideFlag = false;
     }
 
-    // Lógica de caída rápida o salto corto (si sueltas el botón temprano)
     if (!this.body.touching.down && isFastFalling) {
       this.setVelocityY(1500);
     } else if (
@@ -151,11 +148,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.body.velocity.y < -250 &&
       !isFastFalling
     ) {
-      // Aquí se corta el salto si dejas de mantener presionado
       this.setVelocityY(-250);
     }
 
-    // Animaciones e hitboxes
     if (!this.body.touching.down) {
       this.play("jump", true);
       this.body.setSize(40, 80);

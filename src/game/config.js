@@ -3,22 +3,22 @@ import PlayScene from './scenes/PlayScene';
 
 const config = {
     type: Phaser.AUTO,
-    parent: 'game-container', // El ID del contenedor HTML donde se inyectará el juego
+    parent: 'game-container',
     scale: {
-        mode: Phaser.Scale.RESIZE, // Se adapta al tamaño del contenedor de forma responsiva
+        mode: Phaser.Scale.RESIZE,
         width: '100%',
         height: '100%',
     },
-    pixelArt: true, // Mantiene los bordes de los píxeles nítidos (indie aesthetic)
-    transparent: true, // Permite que se vea el fondo CSS de tu aplicación
+    pixelArt: true,
+    transparent: true,
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 1200 }, // Gravedad ideal para el salto dinámico del jugador
-            debug: true // Cambia a true si necesitas volver a calibrar alguna hitbox
+            gravity: { y: 1200 },
+            debug: true
         }
     },
-    scene: [PlayScene] // Tu lista de escenas ordenadas
+    scene: [PlayScene]
 };
 
 export default config;

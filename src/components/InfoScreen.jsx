@@ -1,31 +1,28 @@
-// src/components/InfoScreen.jsx
 export default function InfoScreen({ screen, setScreen }) {
-    
-    // Diccionario simple para los títulos
     const titles = {
-        settings: 'Ajustes',
-        rules: 'Reglas del Juego',
-        howToPlay: 'Cómo Jugar'
+        settings: 'Settings',
+        rules: 'Game Rules',
+        howToPlay: 'How to Play'
     };
 
     return (
-        <div className="flex flex-col items-center w-full max-w-lg p-6 bg-black border-4 border-white shadow-[10px_10px_0px_0px_rgba(255,255,255,1)]">
+        <div className="flex flex-col items-center w-full max-w-sm p-8 rounded-2xl bg-zinc-900/60 border border-white/10 backdrop-blur-xl shadow-2xl">
             
-            <h2 className="text-white text-3xl font-mono uppercase tracking-widest mb-6 border-b-2 border-white pb-2 w-full text-center">
+            <h2 className="text-xl font-light text-zinc-100 tracking-[0.2em] uppercase mb-8 text-center w-full">
                 {titles[screen]}
             </h2>
             
-            <div className="text-white font-mono text-sm leading-relaxed mb-8 w-full text-left min-h-[200px]">
-                {screen === 'settings' && <p>Aquí pondremos controles de volumen y dificultad.</p>}
-                {screen === 'rules' && <p>Faltas, sistema de puntuación y tarjetas.</p>}
-                {screen === 'howToPlay' && <p>Presiona [ESPACIO] para saltar.</p>}
+            <div className="text-zinc-400 font-light text-sm leading-relaxed mb-10 w-full text-center min-h-[120px]">
+                {screen === 'settings' && <p>Volume and difficulty adjustments will appear here.</p>}
+                {screen === 'rules' && <p>Avoid obstacles. Colliding with cones reduces your speed. Colliding with drones costs a life.</p>}
+                {screen === 'howToPlay' && <p>Tap or press [SPACE] to jump.<br/>Swipe down or use [DOWN] to slide.</p>}
             </div>
 
             <button 
                 onClick={() => setScreen('menu')}
-                className="px-8 py-2 bg-white text-black font-mono uppercase tracking-widest hover:bg-neutral-300 transition-colors"
+                className="w-full py-3 rounded-full bg-white text-black font-medium tracking-widest uppercase text-xs hover:bg-zinc-200 transition-colors"
             >
-                Regresar
+                Return
             </button>
             
         </div>

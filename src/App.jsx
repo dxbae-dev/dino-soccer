@@ -9,8 +9,7 @@ function App() {
 
   return (
     <div
-      // CLAVES AQUÍ: fixed, inset-0, h-[100dvh] y overflow-hidden bloquean cualquier scroll
-      className="fixed inset-0 w-full h-[100dvh] overflow-hidden flex flex-col items-center justify-center bg-black select-none touch-none"
+      className="fixed inset-0 w-full h-[100dvh] overflow-hidden flex flex-col items-center justify-center bg-zinc-950 text-zinc-100 font-sans select-none touch-none antialiased"
       style={{
         backgroundImage: "url('/assets/fondo.gif')",
         backgroundSize: "cover",
@@ -18,13 +17,18 @@ function App() {
         backgroundRepeat: "no-repeat",
       }}
     >
-      <div className="absolute inset-0 bg-black/75 z-0"></div>
+      <div 
+        className={`absolute inset-0 z-0 transition-all duration-1000 ${
+          currentScreen === "game" 
+            ? "bg-zinc-950/20 backdrop-blur-none" 
+            : "bg-zinc-950/85 backdrop-blur-sm"
+        }`}
+      ></div>
 
       <div className="z-10 flex flex-col items-center w-full h-full justify-center relative">
         {currentScreen === "menu" && <MainMenu setScreen={setCurrentScreen} />}
 
         {currentScreen === "game" && (
-          // GameUI ahora envuelve al juego para separar el layout
           <GameUI onExit={() => setCurrentScreen("menu")}>
             <PhaserGame />
           </GameUI>

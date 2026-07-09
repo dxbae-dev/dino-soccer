@@ -16,6 +16,9 @@ export default class PlayScene extends Phaser.Scene {
   create() {
     const width = this.scale.width > 0 ? this.scale.width : window.innerWidth;
     const height = this.scale.height > 0 ? this.scale.height : window.innerHeight;
+    
+    const isMobile = width < 768;
+    const globalScale = isMobile ? 1.0 : 1.5;
 
     this.isGameOver = false;
     this.isPaused = false;
@@ -24,31 +27,28 @@ export default class PlayScene extends Phaser.Scene {
     this.score = 0;
     this.lastSavedScore = 0;
     
-    // FIEBRE: Ahora la meta inicial es más baja (500) para que sea rápido activarla
     this.feverPoints = 0;
     this.feverReq = 500; 
     this.feverReady = false;
     
     this.speedRelief = 0; 
-    this.brakeCooldown = 0;
     
-    // VELOCIDAD: Juego más dinámico desde el inicio (-550 en vez de -400)
     this.initialSpeed = -550;
     this.baseSpeed = this.initialSpeed;
     this.currentSpeed = this.initialSpeed; 
-    this.lives = 2;
+    this.lives = 3;
 
-    const groundY = height;
-    this.ground = this.add.rectangle(width, groundY, width * 2, 64, 0xffffff);
+    const groundOffset = isMobile ? 100 : 70; 
+    this.groundY = height - groundOffset;
+
+    this.ground = this.add.rectangle(width / 2, this.groundY + 32, width * 2, 64, 0xffffff);
     this.physics.add.existing(this.ground, true);
-    this.ground.body.updateFromGameObject();
     this.ground.setVisible(false);
 
-    this.player = new Player(this, width * 0.1, groundY - 100);
-    this.player.x = width / 2; 
-    this.player.body.allowGravity = false;
+    this.player = new Player(this, width / 2, this.groundY - 100, globalScale);
+    this.player.body.allowGravity = true; 
 
-    this.obstacleManager = new ObstacleManager(this);
+    this.obstacleManager = new ObstacleManager(this, globalScale);
 
     this.physics.add.collider(this.player, this.ground);
     this.physics.add.collider(this.obstacleManager.getGroup(), this.ground);
@@ -72,31 +72,35 @@ export default class PlayScene extends Phaser.Scene {
             if (isPressed) this.virtualInput.justUp = true;
         } else if (action === 'slide') {
             this.virtualInput.down = isPressed;
-        } else if (action === 'brake' && isPressed && this.brakeCooldown <= 0) {
-            this.activateBrake();
         } else if (action === 'fever' && isPressed && this.feverReady) {
             this.activateFever();
         }
     };
     EventBus.on("virtual-input", this.handleVirtualInput);
 
-    this.startText = this.add.text(width / 2, height / 2 - 50, 'TOCA LA PANTALLA PARA JUGAR', {
-      fontSize: '20px', fontFamily: 'monospace', fill: '#000000', backgroundColor: '#ffffff', padding: { x: 15, y: 10 }
+    this.startText = this.add.text(width / 2, height / 2 - 50, 'TAP TO START', {
+      fontSize: '16px', fontFamily: 'sans-serif', fill: '#ffffff', fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    this.tweens.add({ targets: this.startText, alpha: 0.2, yoyo: true, repeat: -1, duration: 800 });
+    this.tweens.add({ targets: this.startText, alpha: 0.3, yoyo: true, repeat: -1, duration: 1000 });
 
     this.handlePause = (isPausedState) => this.togglePause(isPausedState);
     this.handleTriggerFever = () => this.activateFever();
+    this.handleRestart = () => this.scene.restart();
+    this.handleForceGameOver = (msg) => this.triggerGameOver(msg);
     
     EventBus.on("toggle-pause", this.handlePause);
     EventBus.on("trigger-fever", this.handleTriggerFever);
+    EventBus.on("restart-game", this.handleRestart);
+    EventBus.on("force-game-over", this.handleForceGameOver);
 
     this.events.on("shutdown", () => {
       this.saveScore();
       EventBus.off("toggle-pause", this.handlePause);
       EventBus.off("trigger-fever", this.handleTriggerFever);
-      EventBus.off("virtual-input", this.handleVirtualInput); // Limpiar evento
+      EventBus.off("restart-game", this.handleRestart);
+      EventBus.off("force-game-over", this.handleForceGameOver);
+      EventBus.off("virtual-input", this.handleVirtualInput); 
     });
 
     EventBus.emit("update-lives", this.lives);
@@ -107,41 +111,24 @@ export default class PlayScene extends Phaser.Scene {
   startGame() {
     this.gameStarted = true;
     this.startText.destroy();
-    this.player.body.allowGravity = true;
 
     this.tweens.add({
       targets: this.player,
-      x: this.scale.width * 0.1,
-      duration: 800,
-      ease: 'Power2',
+      x: this.scale.width * 0.15,
+      duration: 1200,
+      ease: 'Sine.easeOut',
       onStart: () => this.player.play('run')
     });
 
-    this.time.delayedCall(800, () => {
+    this.time.delayedCall(1200, () => {
         this.scheduleNextObstacle();
     });
-  }
-
-  activateBrake() {
-      this.brakeCooldown = 5000; 
-      this.speedRelief += 300; 
-      EventBus.emit("show-damage", "¡FRENO!");
-      
-      const emitter = this.add.particles(this.player.x, this.player.y + 40, 'pixel', {
-          speedX: { min: 200, max: 400 },
-          speedY: { min: -50, max: 0 },
-          lifespan: 400,
-          quantity: 20,
-          tint: 0xffffff
-      });
-      this.time.delayedCall(150, () => emitter.stop());
   }
 
   activateFever() {
     if (!this.feverReady) return;
     this.feverReady = false;
     this.feverPoints = 0;
-    // La meta crece menos agresivamente (25% extra cada vez en lugar de 50%)
     this.feverReq = Math.floor(this.feverReq * 1.25); 
     
     EventBus.emit("fever-ready", false);
@@ -164,9 +151,6 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.cursors.right) && this.feverReady) this.activateFever();
-    if (Phaser.Input.Keyboard.JustDown(this.cursors.left) && this.brakeCooldown <= 0) this.activateBrake();
-
-    if (this.brakeCooldown > 0) this.brakeCooldown -= delta;
 
     this.score += 0.1;
     
@@ -176,7 +160,7 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     if (!this.feverReady && !this.player.isCelebrating) {
-        this.feverPoints += 0.2; // La fiebre se llena más rápido
+        this.feverPoints += 0.2; 
         let progress = (this.feverPoints / this.feverReq) * 100;
         EventBus.emit("update-fever-progress", Math.min(100, progress));
         
@@ -191,7 +175,6 @@ export default class PlayScene extends Phaser.Scene {
       if (this.speedRelief < 0) this.speedRelief = 0;
     }
 
-    // Progresión de velocidad: Aumenta más frecuentemente, pero en menor escala.
     const speedMultiplier = Math.floor(Math.max(0, this.score) / 50); 
     const calculatedSpeed = (this.baseSpeed - speedMultiplier * 15) + this.speedRelief;
     
@@ -210,27 +193,23 @@ export default class PlayScene extends Phaser.Scene {
   }
 
   hitObstacle(player, obstacle) {
-    // Si el obstáculo ya está siendo destruido, no hacemos nada
     if (!obstacle.body.enable) return;
 
     if (player.isCelebrating) {
         this.destroyObstacleAnim(obstacle);
         this.cameras.main.shake(100, 0.01);
         this.score += 100;
-        EventBus.emit("show-damage", "+100 FIEBRE");
+        EventBus.emit("show-damage", "+100");
         return;
     }
 
     if (player.postFeverInvincible) return; 
 
-    // Apagamos la colisión instantáneamente para no recibir daño múltiple
     obstacle.body.enable = false;
     this.player.takeDamage();
 
-    // Como ambos usan "obstacles", verificamos por el frame (0 es el cono, 1-3 es el dron)
     const isCone = obstacle.frame.name === 0;
 
-    // Ejecutamos la nueva animación de destrucción
     this.destroyObstacleAnim(obstacle);
 
     if (isCone) {
@@ -247,9 +226,15 @@ export default class PlayScene extends Phaser.Scene {
       this.lives--;
       EventBus.emit("update-lives", this.lives);
 
-      if (this.lives === 1) {
+      if (this.lives === 2) {
         EventBus.emit("show-card", "yellow");
-        player.setTint(0xffff00); 
+        EventBus.emit("show-damage", "WARNING");
+        player.setTint(0xfcd34d); 
+        this.time.delayedCall(800, () => player.clearTint());
+      } else if (this.lives === 1) {
+        EventBus.emit("show-card", "yellow");
+        EventBus.emit("show-damage", "LAST CHANCE!");
+        player.setTint(0xf59e0b); 
         this.time.delayedCall(800, () => player.clearTint());
       } else if (this.lives <= 0) {
         EventBus.emit("show-card", "red");
@@ -258,15 +243,14 @@ export default class PlayScene extends Phaser.Scene {
     }
   }
 
-  // NUEVA FUNCIÓN: Añádela justo debajo de hitObstacle
   destroyObstacleAnim(obstacle) {
       this.tweens.add({
           targets: obstacle,
-          scaleX: 0, // Se encoje
+          scaleX: 0, 
           scaleY: 0,
-          alpha: 0,  // Se vuelve transparente
-          angle: 180, // Da media vuelta (efecto de volcar)
-          duration: 250, // Muy rápido (250ms)
+          alpha: 0,  
+          angle: 180, 
+          duration: 250, 
           ease: 'Back.easeIn',
           onComplete: () => {
               if (obstacle) obstacle.destroy();
@@ -295,7 +279,7 @@ export default class PlayScene extends Phaser.Scene {
     this.time.addEvent({
       delay: delay,
       callback: () => {
-        if (!this.isPaused) this.obstacleManager.spawn(this.currentSpeed);
+        if (!this.isPaused) this.obstacleManager.spawn(this.currentSpeed, this.groundY);
         this.scheduleNextObstacle();
       },
     });
@@ -304,21 +288,19 @@ export default class PlayScene extends Phaser.Scene {
   saveScore() {
     const finalScore = Math.floor(this.score);
     const high = parseInt(localStorage.getItem("highScore") || "-9999");
-    const low = parseInt(localStorage.getItem("lowScore") || "9999");
     if (!isNaN(finalScore)) {
       if (finalScore > high) localStorage.setItem("highScore", finalScore);
-      if (finalScore < low) localStorage.setItem("lowScore", finalScore);
     }
   }
 
-  triggerGameOver() {
+  triggerGameOver(customMessage = null) {
     if (this.isGameOver) return;
     this.isGameOver = true;
     this.saveScore();
     this.physics.pause();
     this.player.anims.stop();
-    this.player.setTint(0x000000); 
+    this.player.setTint(0x3f3f46); 
     this.player.alpha = 1;
-    EventBus.emit("game-over");
+    EventBus.emit("game-over", { score: this.score, customMessage });
   }
 }
