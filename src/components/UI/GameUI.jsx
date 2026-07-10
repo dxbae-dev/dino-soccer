@@ -146,7 +146,7 @@ export default function GameUI({ onExit, children }) {
           {children}
         </div>
 
-        <div className="absolute inset-0 z-20 pointer-events-none">
+        <div className={`absolute inset-0 z-20 pointer-events-none transition-opacity duration-300 ease-in-out ${isPaused || isGameOver ? 'opacity-0' : 'opacity-100'}`}>
           
           <div className="absolute top-4 left-4 right-4 md:top-6 md:left-6 md:right-6 flex justify-between items-start z-40">
             
@@ -188,7 +188,7 @@ export default function GameUI({ onExit, children }) {
             </div>
           </div>
 
-          {showFeverReadyPopup && !isPaused && !isGameOver && (
+          {showFeverReadyPopup && (
             <div className="absolute top-[15%] left-1/2 -translate-x-1/2 text-2xl md:text-3xl font-black italic tracking-[0.3em] text-white drop-shadow-[0_0_15px_rgba(239,68,68,1)] animate-pulse z-50 whitespace-nowrap bg-black/40 px-6 py-2 rounded-full border border-red-500/50 backdrop-blur-sm">
               FEVER READY
             </div>
@@ -200,48 +200,48 @@ export default function GameUI({ onExit, children }) {
             </div>
           )}
 
-          {activeCard === 'yellow' && !isGameOver && (
+          {activeCard === 'yellow' && (
             <div className="absolute top-[25%] left-1/2 -translate-x-1/2 flex flex-col items-center z-50 pointer-events-none transition-all">
               <div className="w-14 h-20 md:w-16 md:h-24 rounded-md shadow-[0_0_30px_rgba(251,191,36,0.6)] bg-amber-400 animate-bounce border border-white/20" />
             </div>
           )}
 
+          <div className="absolute bottom-0 left-0 w-full h-28 md:hidden z-30 flex items-center justify-center gap-8 pointer-events-auto pb-4">
+            <button 
+              onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', true); }}
+              onPointerUp={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', false); }}
+              onPointerLeave={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', false); }}
+              className="w-16 h-16 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-zinc-300 active:bg-white/20 active:text-white backdrop-blur-md transition-colors shadow-lg"
+            >
+              <span className="text-2xl">▼</span>
+            </button>
+
+            <button 
+              onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'fever', true); }}
+              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all backdrop-blur-md shadow-lg ${
+                feverReady && !feverActive 
+                  ? 'bg-red-500/80 border-2 border-red-400 text-white shadow-[0_0_30px_rgba(239,68,68,0.8)] animate-pulse scale-110' 
+                  : 'bg-black/30 border border-white/5 text-zinc-600'
+              }`}
+            >
+              <div className="w-4 h-4 bg-current rotate-45 rounded-sm"></div>
+            </button>
+
+            <button 
+              onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'jump', true); }}
+              onPointerUp={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'jump', false); }}
+              onPointerLeave={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'jump', false); }}
+              className="w-16 h-16 rounded-full bg-black/60 border border-white/30 flex items-center justify-center text-white active:bg-white/30 backdrop-blur-md transition-colors shadow-xl"
+            >
+              <span className="text-2xl">▲</span>
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div className="h-28 md:hidden z-30 w-full flex items-center justify-center gap-8 pointer-events-auto pb-4">
-        <button 
-          onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', true); }}
-          onPointerUp={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', false); }}
-          onPointerLeave={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', false); }}
-          className="w-16 h-16 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-zinc-300 active:bg-white/20 active:text-white backdrop-blur-md transition-colors shadow-lg"
-        >
-          <span className="text-2xl">▼</span>
-        </button>
-
-        <button 
-          onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'fever', true); }}
-          className={`w-16 h-16 rounded-full flex items-center justify-center transition-all backdrop-blur-md shadow-lg ${
-            feverReady && !feverActive 
-              ? 'bg-red-500/80 border-2 border-red-400 text-white shadow-[0_0_30px_rgba(239,68,68,0.8)] animate-pulse scale-110' 
-              : 'bg-black/30 border border-white/5 text-zinc-600'
-          }`}
-        >
-          <div className="w-4 h-4 bg-current rotate-45 rounded-sm"></div>
-        </button>
-
-        <button 
-          onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'jump', true); }}
-          onPointerUp={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'jump', false); }}
-          onPointerLeave={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'jump', false); }}
-          className="w-16 h-16 rounded-full bg-black/60 border border-white/30 flex items-center justify-center text-white active:bg-white/30 backdrop-blur-md transition-colors shadow-xl"
-        >
-          <span className="text-2xl">▲</span>
-        </button>
       </div>
 
       {(isPaused || isGameOver) && (
-        <div className="absolute inset-0 bg-zinc-950/85 flex items-center justify-center pointer-events-auto backdrop-blur-md z-50 transition-all">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto z-50 bg-zinc-950/90 backdrop-blur-md transition-all duration-300">
           <div className="flex flex-col items-center w-full max-w-sm p-8">
             <h2 className="text-2xl font-light text-white tracking-[0.3em] uppercase mb-8 text-center">
               {isGameOver ? "Game Over" : "Paused"}

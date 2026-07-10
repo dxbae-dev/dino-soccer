@@ -20,9 +20,20 @@ export default class PlayScene extends Phaser.Scene {
     const isMobile = width < 768;
     const globalScale = isMobile ? 0.8 : 1.3;
 
+    const g = this.add.graphics();
+    g.fillStyle(0xffffff, 0.8);
+    g.fillRect(0, 0, 6, 6);
+    g.generateTexture('dust', 6, 6);
+    g.clear();
+    g.fillStyle(0xfcd34d, 1);
+    g.fillRect(0, 0, 4, 4);
+    g.generateTexture('spark', 4, 4);
+    g.destroy();
+
     this.isGameOver = false;
     this.isPaused = false;
     this.gameStarted = false;
+    this.isStarting = false;
     
     this.score = 0;
     this.lastSavedScore = 0;
@@ -38,7 +49,7 @@ export default class PlayScene extends Phaser.Scene {
     this.currentSpeed = this.initialSpeed; 
     this.lives = 3;
 
-    this.groundY = height - (isMobile ? 80 : 70);
+    this.groundY = height - (isMobile ? 175 : 70);
 
     this.ground = this.add.rectangle(width / 2, this.groundY + 32, width * 2, 64, 0xffffff);
     this.physics.add.existing(this.ground, true);
@@ -109,6 +120,7 @@ export default class PlayScene extends Phaser.Scene {
 
   startGame() {
     this.gameStarted = true;
+    this.isStarting = true;
     this.startText.destroy();
 
     this.tweens.add({
@@ -116,7 +128,10 @@ export default class PlayScene extends Phaser.Scene {
       x: this.scale.width * 0.15,
       duration: 1200,
       ease: 'Sine.easeOut',
-      onStart: () => this.player.play('run')
+      onStart: () => this.player.play('run'),
+      onComplete: () => {
+          this.isStarting = false;
+      }
     });
 
     this.time.delayedCall(1200, () => {
@@ -128,16 +143,24 @@ export default class PlayScene extends Phaser.Scene {
     if (!this.feverReady) return;
     this.feverReady = false;
     this.feverPoints = 0;
-    this.feverReq = Math.floor(this.feverReq * 1.85); 
     
     EventBus.emit("fever-ready", false);
     EventBus.emit("fever-active", true);
 
     this.player.startCelebration(4500); 
 
-    this.time.delayedCall(4500, () => {
-        EventBus.emit("fever-active", false);
-        this.speedRelief += 350; 
+    this.tweens.addCounter({
+        from: 100,
+        to: 0,
+        duration: 4500,
+        onUpdate: (tween) => {
+            EventBus.emit("update-fever-progress", tween.getValue());
+        },
+        onComplete: () => {
+            this.feverReq = Math.floor(this.feverReq * 1.85);
+            EventBus.emit("fever-active", false);
+            this.speedRelief += 350; 
+        }
     });
   }
 
@@ -145,7 +168,10 @@ export default class PlayScene extends Phaser.Scene {
     if (this.isGameOver || this.isPaused) return;
 
     if (!this.gameStarted) {
-      if (this.cursors.space.isDown || this.input.activePointer.isDown) this.startGame();
+      if (Phaser.Input.Keyboard.JustDown(this.cursors.space) || this.input.activePointer.justDown || this.virtualInput.justUp) {
+          this.startGame();
+          this.virtualInput.justUp = false;
+      }
       return; 
     }
 
@@ -181,7 +207,11 @@ export default class PlayScene extends Phaser.Scene {
 
     this.player.setAnimationSpeed(Math.abs(this.currentSpeed) / Math.abs(this.initialSpeed));
 
-    this.player.handleInput(this.cursors, this.virtualInput, delta);
+    if (this.isStarting) {
+        this.player.play("run", true);
+    } else {
+        this.player.handleInput(this.cursors, this.virtualInput, delta);
+    }
 
     this.obstacleManager.update(this.currentSpeed, this.player.x, () => {
       this.score += 10;

@@ -43,14 +43,27 @@ export default function MainMenu({ setScreen }) {
     setShowInstallModal(false);
   };
 
-  const MenuButton = ({ text, onClick }) => (
+const MenuButton = ({ text, onClick }) => {
+  const isPlay = text === "Play";
+
+  return (
     <button
       onClick={onClick}
-      className="w-64 mb-3.5 py-3.5 rounded-full bg-black/40 border border-white/10 text-zinc-300 font-light tracking-[0.2em] uppercase text-sm hover:bg-white hover:text-black hover:border-white transition-all duration-300 active:scale-95 backdrop-blur-md shadow-lg"
+      className={`
+        w-64 mb-3.5 py-3.5 rounded-full font-medium tracking-[0.2em]
+        uppercase text-sm transition-all duration-300 active:scale-95
+        backdrop-blur-md shadow-lg border
+        ${
+          isPlay
+            ? "bg-green-500 text-black border-white"
+            : "bg-black/40 border-white/10 text-zinc-300 hover:bg-white hover:text-black hover:border-white"
+        }
+      `}
     >
       {text}
     </button>
   );
+};
 
   const displayScore = Math.max(0, parseInt(highScore));
   const formattedScore = displayScore.toString().padStart(5, "0");

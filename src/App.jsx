@@ -1,11 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PhaserGame from "./components/PhaserGame";
 import MainMenu from "./components/MainMenu";
 import InfoScreen from "./components/InfoScreen";
 import GameUI from "./components/UI/GameUI";
+import { EventBus } from "./game/EventBus";
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState("menu");
+  const [gameDarken, setGameDarken] = useState(false);
+
+  useEffect(() => {
+    const handlePause = (paused) => setGameDarken(paused);
+    const handleGameOver = () => setGameDarken(true);
+    const handleRestart = () => setGameDarken(false);
+
+    EventBus.on("toggle-pause", handlePause);
+    EventBus.on("game-over", handleGameOver);
+    EventBus.on("restart-game", handleRestart);
+
+    return () => {
+      EventBus.off("toggle-pause", handlePause);
+      EventBus.off("game-over", handleGameOver);
+      EventBus.off("restart-game", handleRestart);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (currentScreen !== "game") {
+      setGameDarken(false);
+    }
+  }, [currentScreen]);
+
+  const isDark = currentScreen !== "game" || gameDarken;
 
   return (
     <div
@@ -18,10 +44,10 @@ function App() {
       }}
     >
       <div 
-        className={`absolute inset-0 z-0 transition-all duration-700 ease-in-out pointer-events-none ${
-          currentScreen === "game" 
-            ? "bg-zinc-950/50 backdrop-blur-[1px]" 
-            : "bg-zinc-950/75 backdrop-blur-[4px]"
+        className={`absolute inset-0 z-0 pointer-events-none transition-all duration-500 ease-in-out ${
+          isDark 
+            ? "bg-zinc-950/85 backdrop-blur-md" 
+            : "bg-zinc-950/40 backdrop-blur-[1px]"
         }`}
       ></div>
 
