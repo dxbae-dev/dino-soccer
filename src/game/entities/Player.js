@@ -58,6 +58,24 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       });
     }
 
+    this.dustEmitter = scene.add.particles(0, 0, 'dust', {
+      lifespan: 300,
+      scale: { start: 0.3, end: 0 },
+      alpha: { start: 0.5, end: 0 },
+      speedY: { min: -30, max: -10 },
+      speedX: { min: -20, max: 20 },
+      emitting: false
+    });
+
+    this.sparkEmitter = scene.add.particles(0, 0, 'spark', {
+      lifespan: 250,
+      scale: { start: 0.2, end: 0 },
+      alpha: { start: 1, end: 0 },
+      speedY: { min: -30, max: 0 },
+      speedX: { min: -60, max: -20 },
+      emitting: false
+    });
+
     this.play("idle");
   }
 
@@ -101,31 +119,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   spawnDust() {
-    for (let i = 0; i < 2; i++) {
-      const dust = this.scene.add.sprite(this.x - 10 + Math.random() * 20, this.y + 40, 'dust');
-      this.scene.tweens.add({
-        targets: dust,
-        y: dust.y - Math.random() * 10,
-        x: dust.x - 20 + Math.random() * 10,
-        alpha: 0,
-        scale: 0.2,
-        duration: 200 + Math.random() * 100,
-        onComplete: () => dust.destroy()
-      });
-    }
+    this.dustEmitter.emitParticleAt(this.x, this.y + 40, 2);
   }
 
   spawnSpark() {
-    const spark = this.scene.add.sprite(this.x + 15, this.y + 40, 'spark');
-    this.scene.tweens.add({
-      targets: spark,
-      x: spark.x - 20 - Math.random() * 20,
-      y: spark.y - Math.random() * 15,
-      alpha: 0,
-      scale: 0.2,
-      duration: 150 + Math.random() * 100,
-      onComplete: () => spark.destroy()
-    });
+    this.sparkEmitter.emitParticleAt(this.x + 15, this.y + 40, 1);
   }
 
   handleInput(cursors, virtualInput, delta) {

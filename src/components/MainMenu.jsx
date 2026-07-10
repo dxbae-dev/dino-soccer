@@ -46,7 +46,7 @@ export default function MainMenu({ setScreen }) {
   const MenuButton = ({ text, onClick, isPrimary = false }) => (
     <button
       onClick={onClick}
-      className={`w-full max-w-[280px] mb-4 py-4 rounded-full font-medium tracking-[0.2em] uppercase text-sm transition-all duration-300 active:scale-95 shadow-lg backdrop-blur-md border ${
+      className={`w-full max-w-[240px] md:max-w-[280px] mb-3 md:mb-4 py-3 md:py-4 rounded-full font-medium tracking-[0.2em] uppercase text-xs md:text-sm transition-all duration-300 active:scale-95 shadow-lg backdrop-blur-md border ${
         isPrimary 
           ? "bg-emerald-500/90 hover:bg-emerald-400 border-emerald-400 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)]" 
           : "bg-black/40 hover:bg-white hover:text-black hover:border-white border-white/10 text-zinc-300 font-light hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
@@ -59,46 +59,44 @@ export default function MainMenu({ setScreen }) {
   const displayScore = Math.max(0, parseInt(highScore));
   const formattedScore = displayScore.toString().padStart(5, "0");
 
-  // Clases utilitarias para esconder la barra de scroll visualmente manteniendo la funcionalidad
   const hideScrollbar = "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
 
   return (
     <>
-      <div className={`flex flex-col md:flex-row items-center justify-center md:justify-evenly gap-10 pt-30 md:gap-8 w-full max-w-5xl mx-auto px-6 py-10 h-full overflow-y-auto animate-in fade-in zoom-in-95 duration-500 ${hideScrollbar}`}>
+      <div className={`flex flex-col md:flex-row items-center justify-center md:justify-evenly gap-6 md:gap-8 w-full max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-10 h-full overflow-y-auto md:overflow-visible animate-in fade-in zoom-in-95 duration-500 ${hideScrollbar}`}>
         
         {/* Columna Izquierda: Branding y Score */}
         <div className="flex flex-col items-center w-full md:w-1/2 shrink-0">
-          <div className="relative mb-6 rounded-full w-32 h-32 md:w-36 md:h-36 bg-black/50 border border-white/10 flex items-center justify-center backdrop-blur-md shadow-2xl overflow-hidden shrink-0">
+          <div className="relative mb-4 md:mb-6 rounded-full w-24 h-24 md:w-36 md:h-36 bg-black/50 border border-white/10 flex items-center justify-center backdrop-blur-md shadow-2xl overflow-hidden shrink-0">
             <div
               style={{
-                width: "84px",
-                height: "96px",
+                width: "100%",
+                height: "100%",
                 backgroundImage: "url('/icon-512.png')",
                 backgroundPosition: "center",
-                backgroundSize: "contain",
+                backgroundSize: "70%",
                 backgroundRepeat: "no-repeat",
                 imageRendering: "pixelated",
-                transform: "scale(1.15)"
               }}
             />
           </div>
 
-          <h1 className="text-5xl md:text-6xl font-extralight mb-8 tracking-[0.3em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-500 text-center drop-shadow-sm shrink-0">
+          <h1 className="text-4xl md:text-6xl font-extralight mb-6 md:mb-8 tracking-[0.3em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-500 text-center drop-shadow-sm shrink-0">
             Momentum
           </h1>
 
-          <div className="flex flex-col items-center bg-black/40 px-14 py-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl shrink-0">
-            <span className="text-xs text-zinc-400 tracking-widest uppercase mb-2">
+          <div className="flex flex-col items-center bg-black/40 px-10 py-4 md:px-14 md:py-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl shrink-0">
+            <span className="text-[10px] md:text-xs text-zinc-400 tracking-widest uppercase mb-1 md:mb-2">
               High Score
             </span>
-            <span className="text-4xl md:text-5xl font-light text-white tracking-widest drop-shadow-md">
+            <span className="text-3xl md:text-5xl font-light text-white tracking-widest drop-shadow-md">
               {formattedScore}
             </span>
           </div>
         </div>
 
         {/* Columna Derecha: Botones */}
-        <div className="flex flex-col items-center justify-center w-full md:w-1/2 shrink-0">
+        <div className="flex flex-col items-center justify-center w-full md:w-1/2 shrink-0 mt-2 md:mt-0">
           <MenuButton text="Play" onClick={() => setScreen("game")} isPrimary={true} />
           <MenuButton text="How to Play" onClick={() => setScreen("howToPlay")} />
           <MenuButton text="Rules" onClick={() => setScreen("rules")} />

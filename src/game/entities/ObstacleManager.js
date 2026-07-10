@@ -22,19 +22,26 @@ export default class ObstacleManager {
   spawn(currentSpeed, groundY) {
     const width = this.scene.scale.width > 0 ? this.scene.scale.width : window.innerWidth;
     const isAerial = Phaser.Math.Between(1, 100) > 60;
-
-    let obstacle;
     const spawnX = width + 250;
+
+    let obstacle = this.group.getFirstDead(false);
+
+    if (!obstacle) {
+      obstacle = this.group.create(spawnX, groundY, "obstacles", 0);
+    } else {
+      obstacle.setActive(true).setVisible(true);
+      obstacle.body.enable = true;
+      this.scene.tweens.killTweensOf(obstacle);
+      
+      obstacle.setAlpha(1);
+      obstacle.setAngle(0);
+    }
 
     if (isAerial) {
       const randomHeight = Phaser.Math.Between(35, 55);
 
-      obstacle = this.group.create(
-        spawnX,
-        groundY - randomHeight,
-        "obstacles",
-        1,
-      );
+      obstacle.setPosition(spawnX, groundY - randomHeight);
+      obstacle.setFrame(1);
       obstacle.setOrigin(0.5, 1);
       obstacle.setScale(this.baseScale);
       obstacle.play("drone_fly");
@@ -51,7 +58,9 @@ export default class ObstacleManager {
         ease: "Sine.easeInOut",
       });
     } else {
-      obstacle = this.group.create(spawnX, groundY, "obstacles", 0);
+      obstacle.setPosition(spawnX, groundY);
+      obstacle.setFrame(0);
+      obstacle.anims.stop();
       obstacle.setOrigin(0.5, 1);
       obstacle.setScale(this.baseScale * 0.85);
 
@@ -69,13 +78,17 @@ export default class ObstacleManager {
 
   update(currentSpeed, playerX, onPassObstacle) {
     this.group.getChildren().forEach((obstacle) => {
+      if (!obstacle.active) return;
+
       if (!obstacle.passed && obstacle.x < playerX) {
         obstacle.passed = true;
         onPassObstacle();
       }
 
       if (obstacle.x < -100) {
-        obstacle.destroy();
+        this.scene.tweens.killTweensOf(obstacle);
+        this.group.killAndHide(obstacle);
+        obstacle.body.enable = false;
       } else {
         obstacle.setVelocityX(currentSpeed);
       }

@@ -281,7 +281,10 @@ export default class PlayScene extends Phaser.Scene {
           duration: 200, 
           ease: 'Back.easeIn',
           onComplete: () => {
-              if (obstacle) obstacle.destroy();
+              if (obstacle) {
+                  this.tweens.killTweensOf(obstacle);
+                  this.obstacleManager.getGroup().killAndHide(obstacle);
+              }
           }
       });
   }
