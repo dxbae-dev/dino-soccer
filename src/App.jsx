@@ -18,10 +18,10 @@ function App() {
       }}
     >
       <div 
-        className={`absolute inset-0 z-0 transition-all duration-1000 ${
+        className={`absolute inset-0 z-0 transition-all duration-700 ease-in-out pointer-events-none ${
           currentScreen === "game" 
-            ? "bg-zinc-950/20 backdrop-blur-none" 
-            : "bg-zinc-950/85 backdrop-blur-sm"
+            ? "bg-zinc-950/50 backdrop-blur-[1px]" 
+            : "bg-zinc-950/75 backdrop-blur-[4px]"
         }`}
       ></div>
 
@@ -34,7 +34,7 @@ function App() {
           </GameUI>
         )}
 
-        {["settings", "rules", "howToPlay"].includes(currentScreen) && (
+        {["credits", "rules", "howToPlay"].includes(currentScreen) && (
           <InfoScreen screen={currentScreen} setScreen={setCurrentScreen} />
         )}
       </div>

@@ -16,6 +16,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.isCelebrating = false;
     this.postFeverInvincible = false;
+    this.lastGhost = 0;
 
     this.jumpBuffer = 0;
     this.coyoteTime = 0;
@@ -63,7 +64,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   triggerSlide() {
     this.slideFlag = true;
     if (this.slideTimer) this.slideTimer.remove();
-    this.slideTimer = this.scene.time.delayedCall(600, () => {
+    this.slideTimer = this.scene.time.delayedCall(500, () => {
       this.slideFlag = false;
     });
   }
@@ -71,27 +72,29 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   startCelebration(duration) {
     this.isCelebrating = true;
     this.postFeverInvincible = false;
-    this.clearTint();
+    this.setTint(0xff3333); 
 
     this.scene.tweens.add({
       targets: this,
-      scale: this.baseScale * 1.1,
+      scale: this.baseScale * 1.25,
       yoyo: true,
       repeat: -1,
-      duration: 300,
+      duration: 150,
+      ease: 'Sine.easeInOut'
     });
 
     this.scene.time.delayedCall(duration, () => {
       this.isCelebrating = false;
       this.scene.tweens.killTweensOf(this);
       this.setScale(this.baseScale);
+      this.clearTint();
 
       this.postFeverInvincible = true;
       this.scene.tweens.add({
         targets: this,
         alpha: 0.2,
         yoyo: true,
-        repeat: 8,
+        repeat: 12,
         duration: 100,
         onComplete: () => {
           this.postFeverInvincible = false;
@@ -106,11 +109,28 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.play("celebrate", true);
       this.body.setSize(40, 80);
       this.body.setOffset(22, 16);
+
+      if (this.scene.time.now > this.lastGhost + 60) {
+        const ghost = this.scene.add.sprite(this.x, this.y, "player", this.frame.name);
+        ghost.setScale(this.scaleX, this.scaleY);
+        ghost.setTint(0xff3333);
+        ghost.setBlendMode(Phaser.BlendModes.ADD);
+        
+        this.scene.tweens.add({
+            targets: ghost,
+            alpha: 0,
+            scale: this.baseScale * 0.5,
+            x: this.x - 50,
+            duration: 350,
+            onComplete: () => ghost.destroy()
+        });
+        this.lastGhost = this.scene.time.now;
+      }
       return;
     }
 
     if (this.body.touching.down) {
-      this.coyoteTime = 100;
+      this.coyoteTime = 80;
     } else {
       this.coyoteTime -= delta;
     }
@@ -134,14 +154,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const isFastFalling = isDownHeld || this.slideFlag;
 
     if (this.jumpBuffer > 0 && this.coyoteTime > 0) {
-      this.setVelocityY(-650);
+      this.setVelocityY(-720);
       this.jumpBuffer = 0;
       this.coyoteTime = 0;
       this.slideFlag = false;
     }
 
     if (!this.body.touching.down && isFastFalling) {
-      this.setVelocityY(1500);
+      this.setVelocityY(1800);
     } else if (
       !isUpHeld &&
       this.jumpBuffer <= 0 &&
@@ -167,19 +187,24 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   takeDamage() {
-    this.scene.cameras.main.shake(150, 0.015);
+    this.postFeverInvincible = true;
+    this.scene.cameras.main.shake(200, 0.025);
     this.scene.tweens.add({
       targets: this,
-      alpha: { from: 1, to: 0.2 },
-      duration: 150,
+      alpha: { from: 1, to: 0.1 },
+      duration: 100,
       yoyo: true,
-      repeat: 4,
+      repeat: 8,
+      onComplete: () => {
+        this.postFeverInvincible = false;
+        this.alpha = 1;
+      }
     });
   }
 
   setAnimationSpeed(ratio) {
     if (this.anims.currentAnim && this.anims.currentAnim.key === "run") {
-      this.anims.timeScale = Math.max(0.3, ratio);
+      this.anims.timeScale = Math.max(0.7, ratio);
     } else {
       this.anims.timeScale = 1;
     }

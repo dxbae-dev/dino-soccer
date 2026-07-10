@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { EventBus } from "../../game/EventBus";
 
+const msgsNegative = ["TOUGH MATCH", "THAT HURT", "BETTER LUCK NEXT ROUND", "SHAKE IT OFF", "OFF DAY", "NOT THE RESULT YOU WANTED", "ROUGH START", "KEEP YOUR HEAD UP", "EVERY PRO LEARNS THIS WAY", "THE COMEBACK STARTS NOW"];
+const msgsHigh = ["NEW HIGH SCORE", "NEW PERSONAL BEST", "RECORD BROKEN", "TOP PERFORMANCE", "THAT WAS IMPRESSIVE", "UNSTOPPABLE", "ELITE RUN", "YOU SET THE BAR", "HISTORY MADE", "PEAK PERFORMANCE", "LEGENDARY RUN"];
+const msgsAlmost = ["ALMOST HIGH SCORE", "SO CLOSE", "WITHIN REACH", "NEXT RUN IS THE ONE", "ALMOST THERE", "ONE MORE TRY", "CLOSER THAN EVER", "THE RECORD IS SHAKING", "JUST A LITTLE MORE", "YOU'RE GETTING THERE", "THE BEST IS YET TO COME"];
+const msgsNormal = ["GOOD EFFORT", "SOLID RUN", "WELL PLAYED", "NICE GAME", "GOOD MATCH", "KEEP PRACTICING", "STRONG EFFORT", "CLEAN RUN", "KEEP THE MOMENTUM", "EVERY MATCH COUNTS", "ON TO THE NEXT ONE"];
+
+const getRandomMsg = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
 export default function GameUI({ onExit, children }) {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(() => parseInt(localStorage.getItem('highScore') || "0"));
@@ -10,10 +17,12 @@ export default function GameUI({ onExit, children }) {
   const [damageText, setDamageText] = useState(null);
   const [isGameOver, setIsGameOver] = useState(false);
   const [gameOverMessage, setGameOverMessage] = useState("");
+  const [scoreTier, setScoreTier] = useState("normal");
   
   const [feverReady, setFeverReady] = useState(false);
   const [feverActive, setFeverActive] = useState(false);
   const [feverProgress, setFeverProgress] = useState(0);
+  const [showFeverReadyPopup, setShowFeverReadyPopup] = useState(false);
   const [activeCard, setActiveCard] = useState(null); 
 
   useEffect(() => {
@@ -28,10 +37,17 @@ export default function GameUI({ onExit, children }) {
     
     const handleDamage = (text) => {
       setDamageText(text);
-      setTimeout(() => setDamageText(null), 800);
+      setTimeout(() => setDamageText(null), 1000);
     };
     
-    const handleFeverReady = (state) => setFeverReady(state);
+    const handleFeverReady = (state) => {
+      setFeverReady(state);
+      if (state) {
+        setShowFeverReadyPopup(true);
+        setTimeout(() => setShowFeverReadyPopup(false), 4000);
+      }
+    };
+
     const handleFeverActive = (state) => setFeverActive(state);
     const handleFeverProgress = (progress) => setFeverProgress(progress);
     
@@ -46,15 +62,20 @@ export default function GameUI({ onExit, children }) {
       setIsGameOver(true);
       if (customMessage) {
         setGameOverMessage(customMessage);
+        setScoreTier("normal");
       } else {
-        if (finalScore < 0) {
-          setGameOverMessage("NEGATIVE SCORE... OUCH");
+        if (finalScore <= 50) {
+          setGameOverMessage(getRandomMsg(msgsNegative));
+          setScoreTier("low");
         } else if (finalScore > highScore && finalScore > 0) {
-          setGameOverMessage("THAT WAS IMPRESSIVE");
+          setGameOverMessage(getRandomMsg(msgsHigh));
+          setScoreTier("high");
         } else if (finalScore >= highScore * 0.8 && finalScore > 0) {
-          setGameOverMessage("NEXT RUN IS THE ONE");
+          setGameOverMessage(getRandomMsg(msgsAlmost));
+          setScoreTier("almost");
         } else {
-          setGameOverMessage("EVERY MATCH COUNTS");
+          setGameOverMessage(getRandomMsg(msgsNormal));
+          setScoreTier("normal");
         }
       }
     };
@@ -109,10 +130,13 @@ export default function GameUI({ onExit, children }) {
     EventBus.emit("force-game-over", "EVERY CHAMPION TAKES A BREAK...");
   };
 
-  const displayScore = Math.floor(score);
-  const formattedScore = displayScore < 0 
-    ? "-" + Math.abs(displayScore).toString().padStart(4, "0") 
-    : displayScore.toString().padStart(5, "0");
+  const displayScore = Math.max(0, Math.floor(score));
+  const formattedScore = displayScore.toString().padStart(5, "0");
+
+  let scoreColor = "text-white";
+  if (scoreTier === "high") scoreColor = "text-amber-400 drop-shadow-[0_0_20px_rgba(251,191,36,0.8)]";
+  else if (scoreTier === "low") scoreColor = "text-zinc-600";
+  else if (scoreTier === "almost") scoreColor = "text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]";
 
   return (
     <div className="absolute inset-0 w-full h-full flex flex-col pointer-events-none touch-none select-none font-sans">
@@ -156,23 +180,29 @@ export default function GameUI({ onExit, children }) {
           </div>
 
           <div className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 pointer-events-auto">
-            <div className={`w-1.5 h-32 md:h-48 rounded-full bg-black/50 border border-white/10 relative overflow-hidden backdrop-blur-md shadow-lg ${feverReady && !feverActive ? 'shadow-[0_0_15px_rgba(6,182,212,0.5)] border-cyan-400/50' : ''}`}>
+            <div className={`w-3 md:w-4 h-40 md:h-64 rounded-full bg-black/50 border border-white/10 relative overflow-hidden backdrop-blur-md transition-all duration-500 ${feverReady && !feverActive ? 'shadow-[0_0_25px_rgba(239,68,68,0.9)] border-red-500 scale-105 animate-pulse' : 'shadow-lg'}`}>
               <div 
-                className={`absolute bottom-0 w-full transition-all duration-300 ease-out rounded-full ${feverActive ? 'bg-cyan-400' : 'bg-zinc-300'}`}
+                className={`absolute bottom-0 w-full transition-all duration-300 ease-out rounded-full ${feverActive ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,1)]' : feverReady ? 'bg-red-500' : 'bg-red-400/50'}`}
                 style={{ height: `${feverProgress}%` }}
               />
             </div>
           </div>
 
+          {showFeverReadyPopup && !isPaused && !isGameOver && (
+            <div className="absolute top-[15%] left-1/2 -translate-x-1/2 text-2xl md:text-3xl font-black italic tracking-[0.3em] text-white drop-shadow-[0_0_15px_rgba(239,68,68,1)] animate-pulse z-50 whitespace-nowrap bg-black/40 px-6 py-2 rounded-full border border-red-500/50 backdrop-blur-sm">
+              FEVER READY
+            </div>
+          )}
+
           {damageText && (
-            <div className="absolute top-[40%] left-1/2 -translate-x-1/2 text-lg md:text-xl font-light tracking-widest text-white/90 bg-black/70 px-6 py-2 rounded-full backdrop-blur-md border border-white/20 animate-bounce z-50 shadow-2xl whitespace-nowrap">
+            <div className="absolute top-[40%] left-1/2 -translate-x-1/2 text-xl md:text-2xl font-light tracking-widest text-amber-400 bg-black/80 px-8 py-3 rounded-full backdrop-blur-md border border-amber-400/30 animate-bounce z-50 shadow-2xl whitespace-nowrap">
               {damageText}
             </div>
           )}
 
           {activeCard === 'yellow' && !isGameOver && (
             <div className="absolute top-[25%] left-1/2 -translate-x-1/2 flex flex-col items-center z-50 pointer-events-none transition-all">
-              <div className="w-14 h-20 md:w-16 md:h-24 rounded-md shadow-2xl bg-amber-400 animate-bounce" />
+              <div className="w-14 h-20 md:w-16 md:h-24 rounded-md shadow-[0_0_30px_rgba(251,191,36,0.6)] bg-amber-400 animate-bounce border border-white/20" />
             </div>
           )}
 
@@ -193,7 +223,7 @@ export default function GameUI({ onExit, children }) {
           onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'fever', true); }}
           className={`w-16 h-16 rounded-full flex items-center justify-center transition-all backdrop-blur-md shadow-lg ${
             feverReady && !feverActive 
-              ? 'bg-cyan-900/60 border border-cyan-400/50 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)] active:scale-95' 
+              ? 'bg-red-500/80 border-2 border-red-400 text-white shadow-[0_0_30px_rgba(239,68,68,0.8)] animate-pulse scale-110' 
               : 'bg-black/30 border border-white/5 text-zinc-600'
           }`}
         >
@@ -236,8 +266,8 @@ export default function GameUI({ onExit, children }) {
             {isGameOver && (
               <div className="flex flex-col items-center mb-10">
                 <div className="w-14 h-20 rounded-md shadow-[0_0_50px_rgba(244,63,94,0.6)] bg-rose-500 mb-6 animate-pulse" />
-                <span className="text-[10px] text-zinc-400 tracking-widest uppercase mb-2 text-center leading-relaxed max-w-[200px]">{gameOverMessage}</span>
-                <span className="text-5xl font-extralight text-white">{formattedScore}</span>
+                <span className="text-xs md:text-sm text-zinc-400 tracking-widest uppercase mb-2 text-center leading-relaxed max-w-[250px]">{gameOverMessage}</span>
+                <span className={`text-5xl font-extralight ${scoreColor}`}>{formattedScore}</span>
               </div>
             )}
 
