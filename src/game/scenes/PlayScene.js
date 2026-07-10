@@ -17,8 +17,8 @@ export default class PlayScene extends Phaser.Scene {
     const width = this.scale.width > 0 ? this.scale.width : window.innerWidth;
     const height = this.scale.height > 0 ? this.scale.height : window.innerHeight;
     
-    const isMobile = width < 768;
-    const globalScale = isMobile ? 1.0 : 1.5;
+    this.isMobile = width < 768; // Guardamos esto en la escena para usarlo en el ObstacleManager
+    const globalScale = this.isMobile ? 0.8 : 1.3;
 
     this.isGameOver = false;
     this.isPaused = false;
@@ -33,13 +33,14 @@ export default class PlayScene extends Phaser.Scene {
     
     this.speedRelief = 0; 
     
-    this.initialSpeed = -550;
+    // BALANCE: Velocidad inicial más baja y límite máximo añadido
+    this.initialSpeed = -380;
+    this.maxSpeed = -850; 
     this.baseSpeed = this.initialSpeed;
     this.currentSpeed = this.initialSpeed; 
     this.lives = 3;
 
-    const groundOffset = isMobile ? 100 : 70; 
-    this.groundY = height - groundOffset;
+    this.groundY = height - (this.isMobile ? 80 : 70);
 
     this.ground = this.add.rectangle(width / 2, this.groundY + 32, width * 2, 64, 0xffffff);
     this.physics.add.existing(this.ground, true);
@@ -114,7 +115,7 @@ export default class PlayScene extends Phaser.Scene {
 
     this.tweens.add({
       targets: this.player,
-      x: this.scale.width * 0.15,
+      x: this.scale.width * 0.15, // Posición un poco más atrás para mejor visibilidad
       duration: 1200,
       ease: 'Sine.easeOut',
       onStart: () => this.player.play('run')
@@ -175,13 +176,14 @@ export default class PlayScene extends Phaser.Scene {
       if (this.speedRelief < 0) this.speedRelief = 0;
     }
 
-    const speedMultiplier = Math.floor(Math.max(0, this.score) / 50); 
-    const calculatedSpeed = (this.baseSpeed - speedMultiplier * 15) + this.speedRelief;
+    // BALANCE: Aumento de velocidad más suave (cada 100 puntos en lugar de 50)
+    const speedMultiplier = Math.floor(Math.max(0, this.score) / 100); 
+    const calculatedSpeed = (this.baseSpeed - speedMultiplier * 10) + this.speedRelief;
     
-    this.currentSpeed = Math.max(-1000, Math.min(this.initialSpeed, calculatedSpeed));
+    // BALANCE: Limitamos la velocidad para que no sea imposible
+    this.currentSpeed = Math.max(this.maxSpeed, Math.min(this.initialSpeed, calculatedSpeed));
 
     this.player.setAnimationSpeed(this.currentSpeed / this.initialSpeed);
-
     this.player.handleInput(this.cursors, this.virtualInput, delta);
 
     this.obstacleManager.update(this.currentSpeed, this.player.x, () => {
@@ -203,43 +205,45 @@ export default class PlayScene extends Phaser.Scene {
         return;
     }
 
-    if (player.postFeverInvincible) return; 
+    // BALANCE: Respetamos los marcos de invulnerabilidad para evitar perder 2 vidas de golpe
+    if (player.postFeverInvincible || player.isInvincible) return; 
 
     obstacle.body.enable = false;
-    this.player.takeDamage();
+    this.player.takeDamage(); // Esto activa los i-frames
 
     const isCone = obstacle.frame.name === 0;
-
     this.destroyObstacleAnim(obstacle);
 
-    if (isCone) {
-      this.score -= 100;
-      EventBus.emit("show-damage", "-100");
+    // BALANCE: Ahora TODOS los obstáculos quitan vida
+    this.lives--;
+    this.score -= 50; // Penalización fija
+    EventBus.emit("update-lives", this.lives);
+    EventBus.emit("show-damage", "-50");
 
+    // Lógica visual de las tarjetas/vidas
+    if (this.lives === 2) {
+      EventBus.emit("show-card", "yellow");
+      EventBus.emit("show-damage", "WARNING");
+      player.setTint(0xfcd34d); 
+      this.time.delayedCall(800, () => player.clearTint());
+    } else if (this.lives === 1) {
+      EventBus.emit("show-card", "yellow");
+      EventBus.emit("show-damage", "LAST CHANCE!");
+      player.setTint(0xf59e0b); 
+      this.time.delayedCall(800, () => player.clearTint());
+    } else if (this.lives <= 0) {
+      EventBus.emit("show-card", "red");
+      this.triggerGameOver();
+    }
+
+    // Si es un cono, le damos al jugador un pequeño respiro de velocidad
+    if (isCone && this.lives > 0) {
       const originalSpeed = this.baseSpeed;
-      this.baseSpeed = this.baseSpeed * 0.5;
+      this.baseSpeed = this.baseSpeed * 0.7; // Reducimos la velocidad 30% temporalmente
 
       this.time.delayedCall(1500, () => {
         if (!this.isGameOver) this.baseSpeed = originalSpeed;
       });
-    } else {
-      this.lives--;
-      EventBus.emit("update-lives", this.lives);
-
-      if (this.lives === 2) {
-        EventBus.emit("show-card", "yellow");
-        EventBus.emit("show-damage", "WARNING");
-        player.setTint(0xfcd34d); 
-        this.time.delayedCall(800, () => player.clearTint());
-      } else if (this.lives === 1) {
-        EventBus.emit("show-card", "yellow");
-        EventBus.emit("show-damage", "LAST CHANCE!");
-        player.setTint(0xf59e0b); 
-        this.time.delayedCall(800, () => player.clearTint());
-      } else if (this.lives <= 0) {
-        EventBus.emit("show-card", "red");
-        this.triggerGameOver();
-      }
     }
   }
 
@@ -273,8 +277,11 @@ export default class PlayScene extends Phaser.Scene {
   scheduleNextObstacle() {
     if (this.isGameOver) return;
     
-    const speedFactor = Math.abs(this.currentSpeed) / 500; 
-    const delay = Phaser.Math.Between(800, Math.max(1000, 2000 - (speedFactor * 300))) / (this.player.anims.timeScale || 1);
+    // BALANCE: Espaciado más inteligente de obstáculos para que no se vuelvan injustos a alta velocidad
+    const speedFactor = Math.abs(this.currentSpeed) / 400; 
+    const baseDelay = this.isMobile ? 1200 : 1000;
+    
+    const delay = Phaser.Math.Between(baseDelay, Math.max(baseDelay + 500, 2200 - (speedFactor * 200))) / (this.player.anims.timeScale || 1);
 
     this.time.addEvent({
       delay: delay,

@@ -50,11 +50,11 @@ export default function GameUI({ onExit, children }) {
         if (finalScore < 0) {
           setGameOverMessage("NEGATIVE SCORE... OUCH");
         } else if (finalScore > highScore && finalScore > 0) {
-          setGameOverMessage("NEW HIGH SCORE!");
+          setGameOverMessage("THAT WAS IMPRESSIVE");
         } else if (finalScore >= highScore * 0.8 && finalScore > 0) {
-          setGameOverMessage("ALMOST BROKE THE RECORD!");
+          setGameOverMessage("NEXT RUN IS THE ONE");
         } else {
-          setGameOverMessage("GOOD EFFORT!");
+          setGameOverMessage("EVERY MATCH COUNTS");
         }
       }
     };
@@ -106,7 +106,7 @@ export default function GameUI({ onExit, children }) {
 
   const handleForceQuit = () => {
     setIsPaused(false);
-    EventBus.emit("force-game-over", "EXPULSADO POR FALTA DE MOTIVACIÓN");
+    EventBus.emit("force-game-over", "EVERY CHAMPION TAKES A BREAK...");
   };
 
   const displayScore = Math.floor(score);
@@ -124,33 +124,38 @@ export default function GameUI({ onExit, children }) {
 
         <div className="absolute inset-0 z-20 pointer-events-none">
           
-          <div className="absolute top-6 left-6 flex flex-col bg-black/50 px-5 py-3 rounded-2xl backdrop-blur-md transition-all duration-500 shadow-lg pointer-events-auto border border-white/10">
-            <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-400 mb-1 drop-shadow-md">
-              {isNewRecord ? <span className="text-amber-400 animate-pulse">New Record!</span> : "Score"}
-            </span>
-            <span className={`text-3xl md:text-4xl font-light tracking-widest drop-shadow-md ${isNewRecord ? 'text-amber-400' : 'text-white'}`}>
-              {formattedScore}
-            </span>
-          </div>
-
-          <div className="absolute top-8 left-1/2 -translate-x-1/2 flex gap-3 pointer-events-auto bg-black/40 px-4 py-2.5 rounded-full backdrop-blur-md border border-white/10 shadow-lg">
-            <div className={`w-5 h-7 md:w-6 md:h-8 rounded-[4px] border-2 transition-all duration-300 ${lives <= 2 ? 'bg-amber-400 border-amber-500 shadow-[0_0_15px_rgba(251,191,36,0.6)]' : 'bg-transparent border-white/30'}`} />
-            <div className={`w-5 h-7 md:w-6 md:h-8 rounded-[4px] border-2 transition-all duration-300 ${lives <= 1 ? 'bg-amber-400 border-amber-500 shadow-[0_0_15px_rgba(251,191,36,0.6)]' : 'bg-transparent border-white/30'}`} />
-          </div>
-
-          <div className="absolute top-6 right-6 pointer-events-auto">
-            <button
-              onClick={togglePause}
-              className="w-12 h-12 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-black/80 transition-all backdrop-blur-md shadow-lg"
-            >
-              <div className="flex gap-1.5">
-                <div className="w-1 h-3.5 bg-current rounded-full" />
-                <div className="w-1 h-3.5 bg-current rounded-full" />
+          <div className="absolute top-4 left-4 right-4 md:top-6 md:left-6 md:right-6 flex justify-between items-start z-40">
+            
+            <div className="flex flex-col gap-3 pointer-events-auto">
+              <div className="flex flex-col bg-black/50 px-5 py-3 rounded-2xl backdrop-blur-md border border-white/10 shadow-lg min-w-[120px]">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-400 mb-1 drop-shadow-md">
+                  {isNewRecord ? <span className="text-amber-400 animate-pulse">New Record!</span> : "Score"}
+                </span>
+                <span className={`text-3xl md:text-4xl font-light tracking-widest drop-shadow-md ${isNewRecord ? 'text-amber-400' : 'text-white'}`}>
+                  {formattedScore}
+                </span>
               </div>
-            </button>
+              
+              <div className="flex gap-3 bg-black/40 px-4 py-2.5 rounded-full backdrop-blur-md border border-white/10 shadow-lg self-start">
+                <div className={`w-4 h-6 md:w-5 md:h-7 rounded-[4px] border-2 transition-all duration-300 ${lives <= 2 ? 'bg-amber-400 border-amber-500 shadow-[0_0_15px_rgba(251,191,36,0.6)]' : 'bg-transparent border-white/30'}`} />
+                <div className={`w-4 h-6 md:w-5 md:h-7 rounded-[4px] border-2 transition-all duration-300 ${lives <= 1 ? 'bg-amber-400 border-amber-500 shadow-[0_0_15px_rgba(251,191,36,0.6)]' : 'bg-transparent border-white/30'}`} />
+              </div>
+            </div>
+
+            <div className="pointer-events-auto">
+              <button
+                onClick={togglePause}
+                className="w-12 h-12 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-black/80 transition-all backdrop-blur-md shadow-lg"
+              >
+                <div className="flex gap-1.5">
+                  <div className="w-1 h-3.5 bg-current rounded-full" />
+                  <div className="w-1 h-3.5 bg-current rounded-full" />
+                </div>
+              </button>
+            </div>
           </div>
 
-          <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 pointer-events-auto">
+          <div className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 pointer-events-auto">
             <div className={`w-1.5 h-32 md:h-48 rounded-full bg-black/50 border border-white/10 relative overflow-hidden backdrop-blur-md shadow-lg ${feverReady && !feverActive ? 'shadow-[0_0_15px_rgba(6,182,212,0.5)] border-cyan-400/50' : ''}`}>
               <div 
                 className={`absolute bottom-0 w-full transition-all duration-300 ease-out rounded-full ${feverActive ? 'bg-cyan-400' : 'bg-zinc-300'}`}
@@ -160,13 +165,13 @@ export default function GameUI({ onExit, children }) {
           </div>
 
           {damageText && (
-            <div className="absolute top-[40%] left-1/2 -translate-x-1/2 text-lg md:text-xl font-light tracking-widest text-white/90 bg-black/60 px-6 py-2 rounded-full backdrop-blur-md border border-white/20 animate-pulse z-40 shadow-xl whitespace-nowrap">
+            <div className="absolute top-[40%] left-1/2 -translate-x-1/2 text-lg md:text-xl font-light tracking-widest text-white/90 bg-black/70 px-6 py-2 rounded-full backdrop-blur-md border border-white/20 animate-bounce z-50 shadow-2xl whitespace-nowrap">
               {damageText}
             </div>
           )}
 
           {activeCard === 'yellow' && !isGameOver && (
-            <div className="absolute top-[20%] left-1/2 -translate-x-1/2 flex flex-col items-center z-30 pointer-events-none transition-all">
+            <div className="absolute top-[25%] left-1/2 -translate-x-1/2 flex flex-col items-center z-50 pointer-events-none transition-all">
               <div className="w-14 h-20 md:w-16 md:h-24 rounded-md shadow-2xl bg-amber-400 animate-bounce" />
             </div>
           )}
@@ -174,7 +179,7 @@ export default function GameUI({ onExit, children }) {
         </div>
       </div>
 
-      <div className="h-32 md:hidden z-30 w-full flex items-center justify-center gap-8 pointer-events-auto pb-6">
+      <div className="h-28 md:hidden z-30 w-full flex items-center justify-center gap-8 pointer-events-auto pb-4">
         <button 
           onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', true); }}
           onPointerUp={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', false); }}
@@ -192,9 +197,7 @@ export default function GameUI({ onExit, children }) {
               : 'bg-black/30 border border-white/5 text-zinc-600'
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
-            <path fillRule="evenodd" d="M14.615 1.595a.75.75 0 01.359.852L12.982 9.75h7.268a.75.75 0 01.548 1.262l-10.5 11.25a.75.75 0 01-1.272-.71l1.992-7.302H3.75a.75.75 0 01-.548-1.262l10.5-11.25a.75.75 0 01.913-.143z" clipRule="evenodd" />
-          </svg>
+          <div className="w-4 h-4 bg-current rotate-45 rounded-sm"></div>
         </button>
 
         <button 
@@ -208,7 +211,7 @@ export default function GameUI({ onExit, children }) {
       </div>
 
       {(isPaused || isGameOver) && (
-        <div className="absolute inset-0 bg-zinc-950/80 flex items-center justify-center pointer-events-auto backdrop-blur-md z-50 transition-all">
+        <div className="absolute inset-0 bg-zinc-950/85 flex items-center justify-center pointer-events-auto backdrop-blur-md z-50 transition-all">
           <div className="flex flex-col items-center w-full max-w-sm p-8">
             <h2 className="text-2xl font-light text-white tracking-[0.3em] uppercase mb-8 text-center">
               {isGameOver ? "Game Over" : "Paused"}
@@ -232,7 +235,7 @@ export default function GameUI({ onExit, children }) {
 
             {isGameOver && (
               <div className="flex flex-col items-center mb-10">
-                <div className="w-14 h-20 rounded-md shadow-[0_0_30px_rgba(244,63,94,0.4)] bg-rose-500 mb-6 animate-bounce" />
+                <div className="w-14 h-20 rounded-md shadow-[0_0_50px_rgba(244,63,94,0.6)] bg-rose-500 mb-6 animate-pulse" />
                 <span className="text-[10px] text-zinc-400 tracking-widest uppercase mb-2 text-center leading-relaxed max-w-[200px]">{gameOverMessage}</span>
                 <span className="text-5xl font-extralight text-white">{formattedScore}</span>
               </div>
