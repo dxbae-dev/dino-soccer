@@ -44,12 +44,12 @@ export default class PlayScene extends Phaser.Scene {
     
     this.speedRelief = 0; 
     
-    this.initialSpeed = -460;
+    this.initialSpeed = -380;
     this.baseSpeed = this.initialSpeed;
     this.currentSpeed = this.initialSpeed; 
     this.lives = 3;
 
-    this.groundY = height - (isMobile ? 175 : 70);
+    this.groundY = height - (isMobile ? 140 : 70);
 
     this.ground = this.add.rectangle(width / 2, this.groundY + 32, width * 2, 64, 0xffffff);
     this.physics.add.existing(this.ground, true);
@@ -65,7 +65,6 @@ export default class PlayScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.obstacleManager.getGroup(), this.hitObstacle, null, this);
 
     this.cursors = this.input.keyboard.createCursorKeys();
-
     this.virtualInput = { up: false, down: false, justUp: false };
     
     this.input.on('pointerdown', () => {
@@ -75,7 +74,12 @@ export default class PlayScene extends Phaser.Scene {
     });
 
     this.handleVirtualInput = (action, isPressed) => {
-        if (!this.gameStarted || this.isPaused || this.isGameOver) return;
+        if (!this.gameStarted && !this.isPaused && !this.isGameOver && isPressed) {
+            this.startGame();
+            return;
+        }
+
+        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isStarting) return;
 
         if (action === 'jump') {
             this.virtualInput.up = isPressed;
@@ -96,7 +100,9 @@ export default class PlayScene extends Phaser.Scene {
 
     this.handlePause = (isPausedState) => this.togglePause(isPausedState);
     this.handleTriggerFever = () => this.activateFever();
-    this.handleRestart = () => this.scene.restart();
+    this.handleRestart = () => {
+        this.scene.restart();
+    };
     this.handleForceGameOver = (msg) => this.triggerGameOver(msg);
     
     EventBus.on("toggle-pause", this.handlePause);
@@ -122,13 +128,19 @@ export default class PlayScene extends Phaser.Scene {
     this.gameStarted = true;
     this.isStarting = true;
     this.startText.destroy();
+    
+    this.virtualInput.up = false;
+    this.virtualInput.down = false;
+    this.virtualInput.justUp = false;
 
     this.tweens.add({
       targets: this.player,
       x: this.scale.width * 0.15,
       duration: 1200,
       ease: 'Sine.easeOut',
-      onStart: () => this.player.play('run'),
+      onStart: () => {
+          this.player.play('run');
+      },
       onComplete: () => {
           this.isStarting = false;
       }
@@ -170,14 +182,13 @@ export default class PlayScene extends Phaser.Scene {
     if (!this.gameStarted) {
       if (Phaser.Input.Keyboard.JustDown(this.cursors.space) || this.input.activePointer.justDown || this.virtualInput.justUp) {
           this.startGame();
-          this.virtualInput.justUp = false;
       }
       return; 
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.cursors.right) && this.feverReady) this.activateFever();
 
-    this.score += delta * 0.004;
+    this.score += delta * 0.008;
     
     if (Math.floor(this.score) % 100 === 0 && Math.floor(this.score) !== this.lastSavedScore && this.score > 0) {
       this.saveScore();
@@ -200,15 +211,16 @@ export default class PlayScene extends Phaser.Scene {
       if (this.speedRelief < 0) this.speedRelief = 0;
     }
 
-    const speedMultiplier = this.score * 0.12; 
+    const speedMultiplier = this.score * 0.08; 
     const calculatedSpeed = (this.baseSpeed - speedMultiplier) + this.speedRelief;
     
-    this.currentSpeed = Math.max(-950, Math.min(this.initialSpeed, calculatedSpeed));
+    this.currentSpeed = Math.max(-900, Math.min(this.initialSpeed, calculatedSpeed));
 
     this.player.setAnimationSpeed(Math.abs(this.currentSpeed) / Math.abs(this.initialSpeed));
 
     if (this.isStarting) {
         this.player.play("run", true);
+        this.player.jumpBuffer = 0;
     } else {
         this.player.handleInput(this.cursors, this.virtualInput, delta);
     }

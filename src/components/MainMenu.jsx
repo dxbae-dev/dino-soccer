@@ -43,67 +43,71 @@ export default function MainMenu({ setScreen }) {
     setShowInstallModal(false);
   };
 
-const MenuButton = ({ text, onClick }) => {
-  const isPlay = text === "Play";
-
-  return (
+  const MenuButton = ({ text, onClick, isPrimary = false }) => (
     <button
       onClick={onClick}
-      className={`
-        w-64 mb-3.5 py-3.5 rounded-full font-medium tracking-[0.2em]
-        uppercase text-sm transition-all duration-300 active:scale-95
-        backdrop-blur-md shadow-lg border
-        ${
-          isPlay
-            ? "bg-green-500 text-black border-white"
-            : "bg-black/40 border-white/10 text-zinc-300 hover:bg-white hover:text-black hover:border-white"
-        }
-      `}
+      className={`w-full max-w-[280px] mb-4 py-4 rounded-full font-medium tracking-[0.2em] uppercase text-sm transition-all duration-300 active:scale-95 shadow-lg backdrop-blur-md border ${
+        isPrimary 
+          ? "bg-emerald-500/90 hover:bg-emerald-400 border-emerald-400 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)]" 
+          : "bg-black/40 hover:bg-white hover:text-black hover:border-white border-white/10 text-zinc-300 font-light hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+      }`}
     >
       {text}
     </button>
   );
-};
 
   const displayScore = Math.max(0, parseInt(highScore));
   const formattedScore = displayScore.toString().padStart(5, "0");
 
+  // Clases utilitarias para esconder la barra de scroll visualmente manteniendo la funcionalidad
+  const hideScrollbar = "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
+
   return (
     <>
-      <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto animate-in fade-in zoom-in-95 duration-500">
-        <div className="relative mb-6 rounded-full w-28 h-28 bg-black/50 border border-white/10 flex items-center justify-center backdrop-blur-md shadow-2xl overflow-hidden">
-          <div
-            style={{
-              width: "84px",
-              height: "96px",
-              backgroundImage: "url('/icon-512.png')",
-              backgroundPosition: "center",
-              backgroundSize: "contain",
-              backgroundRepeat: "no-repeat",
-              imageRendering: "pixelated",
-            }}
-          />
+      <div className={`flex flex-col md:flex-row items-center justify-center md:justify-evenly gap-10 pt-30 md:gap-8 w-full max-w-5xl mx-auto px-6 py-10 h-full overflow-y-auto animate-in fade-in zoom-in-95 duration-500 ${hideScrollbar}`}>
+        
+        {/* Columna Izquierda: Branding y Score */}
+        <div className="flex flex-col items-center w-full md:w-1/2 shrink-0">
+          <div className="relative mb-6 rounded-full w-32 h-32 md:w-36 md:h-36 bg-black/50 border border-white/10 flex items-center justify-center backdrop-blur-md shadow-2xl overflow-hidden shrink-0">
+            <div
+              style={{
+                width: "84px",
+                height: "96px",
+                backgroundImage: "url('/icon-512.png')",
+                backgroundPosition: "center",
+                backgroundSize: "contain",
+                backgroundRepeat: "no-repeat",
+                imageRendering: "pixelated",
+                transform: "scale(1.15)"
+              }}
+            />
+          </div>
+
+          <h1 className="text-5xl md:text-6xl font-extralight mb-8 tracking-[0.3em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-500 text-center drop-shadow-sm shrink-0">
+            Momentum
+          </h1>
+
+          <div className="flex flex-col items-center bg-black/40 px-14 py-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl shrink-0">
+            <span className="text-xs text-zinc-400 tracking-widest uppercase mb-2">
+              High Score
+            </span>
+            <span className="text-4xl md:text-5xl font-light text-white tracking-widest drop-shadow-md">
+              {formattedScore}
+            </span>
+          </div>
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-extralight mb-10 tracking-[0.3em] uppercase text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-500 text-center drop-shadow-sm">
-          Momentum
-        </h1>
-
-        <div className="flex flex-col items-center mb-10 bg-black/40 px-12 py-5 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl">
-          <span className="text-[10px] text-zinc-400 tracking-widest uppercase mb-1.5">
-            High Score
-          </span>
-          <span className="text-3xl md:text-4xl font-light text-white tracking-widest drop-shadow-md">
-            {formattedScore}
-          </span>
-        </div>
-
-        <div className="flex flex-col items-center w-full">
-          <MenuButton text="Play" onClick={() => setScreen("game")} />
+        {/* Columna Derecha: Botones */}
+        <div className="flex flex-col items-center justify-center w-full md:w-1/2 shrink-0">
+          <MenuButton text="Play" onClick={() => setScreen("game")} isPrimary={true} />
           <MenuButton text="How to Play" onClick={() => setScreen("howToPlay")} />
           <MenuButton text="Rules" onClick={() => setScreen("rules")} />
           <MenuButton text="Credits" onClick={() => setScreen("credits")} />
+          {installPrompt && (
+            <MenuButton text="Install App" onClick={handleInstallClick} />
+          )}
         </div>
+
       </div>
 
       {showInstallModal && installPrompt && (

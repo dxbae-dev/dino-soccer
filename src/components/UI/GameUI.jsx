@@ -241,7 +241,7 @@ export default function GameUI({ onExit, children }) {
       </div>
 
       {(isPaused || isGameOver) && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto z-50 bg-zinc-950/90 backdrop-blur-md transition-all duration-300">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto z-50 bg-zinc-800/50 backdrop-blur-md transition-all duration-300">
           <div className="flex flex-col items-center w-full max-w-sm p-8">
             <h2 className="text-2xl font-light text-white tracking-[0.3em] uppercase mb-8 text-center">
               {isGameOver ? "Game Over" : "Paused"}
@@ -265,7 +265,7 @@ export default function GameUI({ onExit, children }) {
 
             {isGameOver && (
               <div className="flex flex-col items-center mb-10">
-                <div className="w-14 h-20 rounded-md shadow-[0_0_50px_rgba(244,63,94,0.6)] bg-rose-500 mb-6 animate-pulse" />
+                <div className="w-14 h-20 rounded-md shadow-[0_0_50px_rgba(244,63,94,0.6)] bg-rose-600 mb-6 animate-pulse" />
                 <span className="text-xs md:text-sm text-zinc-400 tracking-widest uppercase mb-2 text-center leading-relaxed max-w-[250px]">{gameOverMessage}</span>
                 <span className={`text-5xl font-extralight ${scoreColor}`}>{formattedScore}</span>
               </div>

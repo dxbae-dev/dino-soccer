@@ -13,6 +13,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.body.setSize(40, 80);
     this.body.setOffset(22, 16);
     this.setCollideWorldBounds(true);
+    
+    this.setVelocity(0, 0);
 
     this.isCelebrating = false;
     this.postFeverInvincible = false;
@@ -99,15 +101,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   spawnDust() {
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 2; i++) {
       const dust = this.scene.add.sprite(this.x - 10 + Math.random() * 20, this.y + 40, 'dust');
       this.scene.tweens.add({
         targets: dust,
-        y: dust.y - Math.random() * 15,
+        y: dust.y - Math.random() * 10,
         x: dust.x - 20 + Math.random() * 10,
         alpha: 0,
         scale: 0.2,
-        duration: 300 + Math.random() * 200,
+        duration: 200 + Math.random() * 100,
         onComplete: () => dust.destroy()
       });
     }
@@ -117,11 +119,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const spark = this.scene.add.sprite(this.x + 15, this.y + 40, 'spark');
     this.scene.tweens.add({
       targets: spark,
-      x: spark.x - 30 - Math.random() * 30,
-      y: spark.y - Math.random() * 20,
+      x: spark.x - 20 - Math.random() * 20,
+      y: spark.y - Math.random() * 15,
       alpha: 0,
       scale: 0.2,
-      duration: 200 + Math.random() * 200,
+      duration: 150 + Math.random() * 100,
       onComplete: () => spark.destroy()
     });
   }
