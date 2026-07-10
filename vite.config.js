@@ -17,7 +17,7 @@ export default defineConfig({
         description: 'A fast-paced pixel art endless runner. Survive, jump, slide, and trigger Fever mode!',
         theme_color: '#09090b',
         background_color: '#09090b',
-        display: 'standalone',
+        display: 'fullscreen',
         orientation: 'portrait', // Bloquea la PWA en vertical, ideal para tu UI actual
         icons: [
           {
