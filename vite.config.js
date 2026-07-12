@@ -9,7 +9,6 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['**/*.{png,svg,gif,ico,wav,mp3,json}'],
       workbox: {
         clientsClaim: true,
         skipWaiting: true,
