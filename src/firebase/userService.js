@@ -28,12 +28,26 @@ export const createUserProfile = async (uid, nickname) => {
 };
 
 export const updateUserScore = async (uid, currentHighScore, newScore) => {
-  if (newScore > currentHighScore) {
+  console.log("Intentando guardar...", { uid, currentHighScore, newScore });
+  
+  const nHighScore = parseInt(currentHighScore);
+  const nNewScore = parseInt(newScore);
+
+  if (nNewScore >= nHighScore) {
     const userRef = doc(db, "users", uid);
-    await updateDoc(userRef, {
-      highScore: newScore
-    });
-    return true;
+    try {
+      console.log("Comparación exitosa, escribiendo en Firestore...");
+      await updateDoc(userRef, {
+        highScore: nNewScore
+      });
+      console.log("¡Guardado exitoso!");
+      return true;
+    } catch (error) {
+      console.error("ERROR CRÍTICO EN FIRESTORE:", error); // Esto debería salir si las reglas fallan
+      throw error;
+    }
+  } else {
+    console.log("El score no es mayor al récord, no se guarda.");
   }
   return false;
 };

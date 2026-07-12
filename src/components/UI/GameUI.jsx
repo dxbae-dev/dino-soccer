@@ -82,7 +82,7 @@ export default function GameUI({ onExit, children }) {
       const currentHigh = parseInt(localStorage.getItem('highScore') || "0");
       const isGuest = localStorage.getItem('isGuest') === 'true';
       
-      if (currentUser && finalScore > currentHigh) {
+      if (currentUser && finalScore >= currentHigh) {
         setHighScore(Math.floor(finalScore));
         localStorage.setItem('highScore', Math.floor(finalScore));
         
