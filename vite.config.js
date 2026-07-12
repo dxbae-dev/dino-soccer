@@ -9,8 +9,10 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      // Simplificado para atrapar todos los assets de la carpeta public automáticamente
-      includeAssets: ['icon-32.png', 'icon-64.png', 'icon-180.png', 'assets/**/*'], 
+      includeAssets: ['icon-32.png', 'icon-64.png', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'assets/**/*'], 
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,gif,json,wav,mp3}']
+      },
       manifest: {
         name: 'MOMENTUM',
         short_name: 'Momentum',
@@ -18,7 +20,7 @@ export default defineConfig({
         theme_color: '#09090b',
         background_color: '#09090b',
         display: 'fullscreen',
-        orientation: 'portrait', // Bloquea la PWA en vertical, ideal para tu UI actual
+        orientation: 'portrait',
         icons: [
           {
             src: '/icon-192.png',
