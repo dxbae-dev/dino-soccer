@@ -9,10 +9,38 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon-32.png', 'icon-64.png', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'assets/**/*'], 
+      includeAssets: [
+        'icon-192.png', 
+        'icon-512.png', 
+        'assets/**/*.svg', 
+        'assets/**/*.png', 
+        'assets/**/*.gif', 
+        'assets/**/*.wav', 
+        'assets/**/*.mp3'
+      ], 
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,gif,json,wav,mp3}'],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
+        clientsClaim: true,
+        skipWaiting: true,
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,gif,wav,mp3,json}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/__/],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif|webp|wav|mp3)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'assets-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
       },
       manifest: {
         name: 'MOMENTUM',
@@ -43,4 +71,7 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    chunkSizeWarningLimit: 5000
+  }
 })
