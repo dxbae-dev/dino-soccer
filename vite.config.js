@@ -9,38 +9,15 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: [
-        'icon-192.png', 
-        'icon-512.png', 
-        'assets/**/*.svg', 
-        'assets/**/*.png', 
-        'assets/**/*.gif', 
-        'assets/**/*.wav', 
-        'assets/**/*.mp3'
-      ], 
+      includeAssets: ['**/*.{png,svg,gif,ico,wav,mp3,json}'],
       workbox: {
         clientsClaim: true,
         skipWaiting: true,
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,gif,wav,mp3,json}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/__/],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif|webp|wav|mp3)$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'assets-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
+        navigateFallbackDenylist: [/^\/__/]
       },
       manifest: {
         name: 'MOMENTUM',
@@ -50,6 +27,9 @@ export default defineConfig({
         background_color: '#09090b',
         display: 'fullscreen',
         orientation: 'portrait',
+        start_url: '/',
+        id: '/',
+        scope: '/',
         icons: [
           {
             src: '/icon-192.png',

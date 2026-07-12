@@ -181,7 +181,7 @@ export default function GameUI({ onExit, children }) {
   else if (scoreTier === "almost") scoreColor = "text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]";
 
   return (
-    <div className="absolute inset-0 w-full h-full flex flex-col pointer-events-none touch-none select-none font-sans">
+    <div className="absolute inset-0 w-full h-full flex flex-col pointer-events-none font-sans" style={{ WebkitTouchCallout: 'none' }}>
       
       <div className="flex-1 relative w-full h-full pointer-events-auto">
         <div className="absolute inset-0 z-10">
@@ -211,9 +211,11 @@ export default function GameUI({ onExit, children }) {
             <div className="pointer-events-auto">
               <button
                 onClick={togglePause}
+                onContextMenu={(e) => e.preventDefault()}
+                style={{ WebkitTouchCallout: 'none' }}
                 className="w-12 h-12 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-black/80 transition-all backdrop-blur-md shadow-lg group"
               >
-                <img src="/assets/icons/pause.svg" alt="Pause" className="w-5 h-5 brightness-0 invert group-active:scale-95 transition-transform" />
+                <img src="/assets/icons/pause.svg" alt="Pause" draggable="false" className="w-5 h-5 brightness-0 invert group-active:scale-95 transition-transform pointer-events-none select-none" />
               </button>
             </div>
           </div>
@@ -250,29 +252,35 @@ export default function GameUI({ onExit, children }) {
               onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', true); }}
               onPointerUp={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', false); }}
               onPointerLeave={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', false); }}
-              className="w-16 h-16 rounded-full bg-black/60 border border-white/20 flex items-center justify-center active:bg-white/20 backdrop-blur-md transition-colors shadow-lg group"
+              onContextMenu={(e) => e.preventDefault()}
+              style={{ WebkitTouchCallout: 'none' }}
+              className="w-16 h-16 rounded-full bg-black/60 border border-white/20 flex items-center justify-center active:bg-white/20 backdrop-blur-md transition-colors shadow-lg group select-none"
             >
-              <img src="/assets/icons/arrow-down.svg" alt="Slide" className="w-8 h-8 brightness-0 invert opacity-80 group-active:opacity-100 transition-opacity" />
+              <img src="/assets/icons/arrow-down.svg" alt="Slide" draggable="false" className="w-8 h-8 brightness-0 invert opacity-80 group-active:opacity-100 transition-opacity pointer-events-none select-none" />
             </button>
 
             <button 
               onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'fever', true); }}
-              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all backdrop-blur-md shadow-lg ${
+              onContextMenu={(e) => e.preventDefault()}
+              style={{ WebkitTouchCallout: 'none' }}
+              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all backdrop-blur-md shadow-lg select-none ${
                 feverReady && !feverActive 
                   ? 'bg-red-500/80 border-2 border-red-400 shadow-[0_0_30px_rgba(239,68,68,0.8)] animate-pulse scale-110' 
                   : 'bg-black/30 border border-white/5'
               }`}
             >
-              <img src="/assets/icons/zap.svg" alt="Fever" className={`w-8 h-8 brightness-0 invert ${!(feverReady && !feverActive) && 'opacity-30'}`} />
+              <img src="/assets/icons/zap.svg" alt="Fever" draggable="false" className={`w-8 h-8 brightness-0 invert pointer-events-none select-none ${!(feverReady && !feverActive) && 'opacity-30'}`} />
             </button>
 
             <button 
               onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'jump', true); }}
               onPointerUp={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'jump', false); }}
               onPointerLeave={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'jump', false); }}
-              className="w-16 h-16 rounded-full bg-black/60 border border-white/30 flex items-center justify-center active:bg-white/30 backdrop-blur-md transition-colors shadow-xl group"
+              onContextMenu={(e) => e.preventDefault()}
+              style={{ WebkitTouchCallout: 'none' }}
+              className="w-16 h-16 rounded-full bg-black/60 border border-white/30 flex items-center justify-center active:bg-white/30 backdrop-blur-md transition-colors shadow-xl group select-none"
             >
-              <img src="/assets/icons/arrow-up.svg" alt="Jump" className="w-8 h-8 brightness-0 invert opacity-90 group-active:opacity-100 transition-opacity" />
+              <img src="/assets/icons/arrow-up.svg" alt="Jump" draggable="false" className="w-8 h-8 brightness-0 invert opacity-90 group-active:opacity-100 transition-opacity pointer-events-none select-none" />
             </button>
           </div>
         </div>
@@ -313,23 +321,23 @@ export default function GameUI({ onExit, children }) {
             <div className="flex flex-col gap-4 w-full">
               {isGameOver ? (
                 <>
-                  <button onClick={handleRetry} className="flex items-center justify-center gap-3 w-full py-4 rounded-full bg-white text-black font-medium tracking-widest uppercase text-xs hover:bg-zinc-200 transition-colors">
-                    <img src="/assets/icons/refresh-ccw.svg" alt="Retry" className="w-4 h-4 brightness-0" />
+                  <button onClick={handleRetry} onContextMenu={(e) => e.preventDefault()} style={{ WebkitTouchCallout: 'none' }} className="flex items-center justify-center gap-3 w-full py-4 rounded-full bg-white text-black font-medium tracking-widest uppercase text-xs hover:bg-zinc-200 transition-colors select-none">
+                    <img src="/assets/icons/refresh-ccw.svg" alt="Retry" draggable="false" className="w-4 h-4 brightness-0 pointer-events-none" />
                     RETRY
                   </button>
-                  <button onClick={onExit} className="flex items-center justify-center gap-3 w-full py-4 rounded-full bg-white/5 border border-white/10 text-zinc-300 font-light tracking-widest uppercase text-xs hover:bg-white/10 hover:text-white transition-colors">
-                    <img src="/assets/icons/home.svg" alt="Menu" className="w-4 h-4 brightness-0 invert" />
+                  <button onClick={onExit} onContextMenu={(e) => e.preventDefault()} style={{ WebkitTouchCallout: 'none' }} className="flex items-center justify-center gap-3 w-full py-4 rounded-full bg-white/5 border border-white/10 text-zinc-300 font-light tracking-widest uppercase text-xs hover:bg-white/10 hover:text-white transition-colors select-none">
+                    <img src="/assets/icons/home.svg" alt="Menu" draggable="false" className="w-4 h-4 brightness-0 invert pointer-events-none" />
                     RETURN TO MENU
                   </button>
                 </>
               ) : (
                 <>
-                  <button onClick={togglePause} className="flex items-center justify-center gap-3 w-full py-4 rounded-full bg-white text-black font-medium tracking-widest uppercase text-xs hover:bg-zinc-200 transition-colors">
-                    <img src="/assets/icons/play.svg" alt="Resume" className="w-4 h-4 brightness-0" />
+                  <button onClick={togglePause} onContextMenu={(e) => e.preventDefault()} style={{ WebkitTouchCallout: 'none' }} className="flex items-center justify-center gap-3 w-full py-4 rounded-full bg-white text-black font-medium tracking-widest uppercase text-xs hover:bg-zinc-200 transition-colors select-none">
+                    <img src="/assets/icons/play.svg" alt="Resume" draggable="false" className="w-4 h-4 brightness-0 pointer-events-none" />
                     RESUME
                   </button>
-                  <button onClick={handleForceQuit} className="flex items-center justify-center gap-3 w-full py-4 rounded-full bg-white/5 border border-white/10 text-zinc-300 font-light tracking-widest uppercase text-xs hover:bg-white/10 hover:text-white transition-colors">
-                    <img src="/assets/icons/x.svg" alt="Quit" className="w-4 h-4 brightness-0 invert" />
+                  <button onClick={handleForceQuit} onContextMenu={(e) => e.preventDefault()} style={{ WebkitTouchCallout: 'none' }} className="flex items-center justify-center gap-3 w-full py-4 rounded-full bg-white/5 border border-white/10 text-zinc-300 font-light tracking-widest uppercase text-xs hover:bg-white/10 hover:text-white transition-colors select-none">
+                    <img src="/assets/icons/x.svg" alt="Quit" draggable="false" className="w-4 h-4 brightness-0 invert pointer-events-none" />
                     QUIT MATCH
                   </button>
                 </>
