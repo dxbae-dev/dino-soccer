@@ -3,6 +3,7 @@ import PhaserGame from "./components/PhaserGame";
 import MainMenu from "./components/MainMenu";
 import InfoScreen from "./components/InfoScreen";
 import GameUI from "./components/UI/GameUI";
+import AccountScreen from "./components/AccountScreen";
 import { EventBus } from "./game/EventBus";
 
 function App() {
@@ -63,6 +64,8 @@ function App() {
         {["credits", "rules", "howToPlay"].includes(currentScreen) && (
           <InfoScreen screen={currentScreen} setScreen={setCurrentScreen} />
         )}
+
+        {currentScreen === "account" && <AccountScreen setScreen={setCurrentScreen} />}
       </div>
     </div>
   );

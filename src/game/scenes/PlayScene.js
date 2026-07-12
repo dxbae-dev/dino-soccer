@@ -49,7 +49,7 @@ export default class PlayScene extends Phaser.Scene {
     this.currentSpeed = this.initialSpeed; 
     this.lives = 3;
 
-    this.groundY = height - (isMobile ? 140 : 70);
+    this.groundY = height - (isMobile ? 190 : 70);
 
     this.ground = this.add.rectangle(width / 2, this.groundY + 32, width * 2, 64, 0xffffff);
     this.physics.add.existing(this.ground, true);

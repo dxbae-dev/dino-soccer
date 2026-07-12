@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { EventBus } from "../../game/EventBus";
+import { useAuth } from "../../firebase/AuthContext";
+import { updateUserScore } from "../../firebase/userService";
 
 const msgsNegative = ["TOUGH MATCH", "THAT HURT", "BETTER LUCK NEXT ROUND", "SHAKE IT OFF", "OFF DAY", "NOT THE RESULT YOU WANTED", "ROUGH START", "KEEP YOUR HEAD UP", "EVERY PRO LEARNS THIS WAY", "THE COMEBACK STARTS NOW"];
 const msgsHigh = ["NEW HIGH SCORE", "NEW PERSONAL BEST", "RECORD BROKEN", "TOP PERFORMANCE", "THAT WAS IMPRESSIVE", "UNSTOPPABLE", "ELITE RUN", "YOU SET THE BAR", "HISTORY MADE", "PEAK PERFORMANCE", "LEGENDARY RUN"];
@@ -9,6 +11,8 @@ const msgsNormal = ["GOOD EFFORT", "SOLID RUN", "WELL PLAYED", "NICE GAME", "GOO
 const getRandomMsg = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 export default function GameUI({ onExit, children }) {
+  const { currentUser } = useAuth();
+  
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(() => parseInt(localStorage.getItem('highScore') || "0"));
   const [isNewRecord, setIsNewRecord] = useState(false);
@@ -58,8 +62,19 @@ export default function GameUI({ onExit, children }) {
       }
     };
 
-    const handleGameOver = ({ score: finalScore, customMessage }) => {
+    const handleGameOver = async ({ score: finalScore, customMessage }) => {
       setIsGameOver(true);
+      
+      if (currentUser && finalScore > highScore) {
+        try {
+          await updateUserScore(currentUser.uid, highScore, Math.floor(finalScore));
+          setHighScore(Math.floor(finalScore));
+          localStorage.setItem('highScore', Math.floor(finalScore));
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
       if (customMessage) {
         setGameOverMessage(customMessage);
         setScoreTier("normal");
@@ -108,7 +123,7 @@ export default function GameUI({ onExit, children }) {
       EventBus.off("show-card", handleShowCard);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isGameOver, feverReady, isPaused, highScore, isNewRecord]); 
+  }, [isGameOver, feverReady, isPaused, highScore, isNewRecord, currentUser]);
 
   const togglePause = () => {
     if (isGameOver) return;
@@ -189,7 +204,7 @@ export default function GameUI({ onExit, children }) {
           </div>
 
           {showFeverReadyPopup && (
-            <div className="absolute top-[15%] left-1/2 -translate-x-1/2 text-2xl md:text-3xl font-black italic tracking-[0.3em] text-white drop-shadow-[0_0_15px_rgba(239,68,68,1)] animate-pulse z-50 whitespace-nowrap bg-black/40 px-6 py-2 rounded-full border border-red-500/50 backdrop-blur-sm">
+            <div className="absolute top-[35%] left-1/2 -translate-x-1/2 text-2xl md:text-3xl font-black italic tracking-[0.3em] text-white drop-shadow-[0_0_15px_rgba(239,68,68,1)] animate-pulse z-50 whitespace-nowrap bg-black/40 px-6 py-2 rounded-full border border-red-500/40 backdrop-blur-sm">
               FEVER READY
             </div>
           )}
