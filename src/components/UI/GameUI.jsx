@@ -87,6 +87,8 @@ export default function GameUI({ onExit, children }) {
       const currentHigh = parseInt(localStorage.getItem('highScore') || "0");
       const isGuest = localStorage.getItem('isGuest') === 'true';
       
+      const isActuallyNewRecord = isNewRecord || (numericFinalScore > currentHigh && numericFinalScore > 0);
+
       if (numericFinalScore >= currentHigh && numericFinalScore > 0) {
         setHighScore(numericFinalScore);
         localStorage.setItem('highScore', numericFinalScore);
@@ -104,12 +106,12 @@ export default function GameUI({ onExit, children }) {
         setGameOverMessage(customMessage);
         setScoreTier("normal");
       } else {
-        if (numericFinalScore <= 50) {
-          setGameOverMessage(getRandomMsg(msgsNegative));
-          setScoreTier("low");
-        } else if (numericFinalScore > currentHigh && numericFinalScore > 0) {
+        if (isActuallyNewRecord) {
           setGameOverMessage(getRandomMsg(msgsHigh));
           setScoreTier("high");
+        } else if (numericFinalScore <= 50) {
+          setGameOverMessage(getRandomMsg(msgsNegative));
+          setScoreTier("low");
         } else if (numericFinalScore >= currentHigh * 0.8 && numericFinalScore > 0) {
           setGameOverMessage(getRandomMsg(msgsAlmost));
           setScoreTier("almost");

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../firebase/AuthContext";
-import { getUserProfile, isNicknameAvailable, createUserProfile, loginWithGoogle, recoverWithTransferCode, linkGoogleAccount, checkProfileExists } from "../firebase/userService";
+import { getUserProfile, isNicknameAvailable, createUserProfile, loginWithGoogle, recoverWithTransferCode, linkGoogleAccount, checkProfileExists, getLeaderboard } from "../firebase/userService";
 
 export default function MainMenu({ setScreen }) {
   const { currentUser } = useAuth();
   const [highScore, setHighScore] = useState(() => parseInt(localStorage.getItem('highScore') || "0"));
   const [playerNickname, setPlayerNickname] = useState(() => localStorage.getItem('playerNickname') || "");
+  const [playerRank, setPlayerRank] = useState(null);
   const [needsNickname, setNeedsNickname] = useState(false);
   const [nickInput, setNickInput] = useState("");
   const [nickError, setNickError] = useState("");
@@ -31,6 +32,16 @@ export default function MainMenu({ setScreen }) {
           localStorage.removeItem("isGuest");
           setNeedsNickname(false);
           setRecoveryMode(false);
+          
+          try {
+            const board = await getLeaderboard(10);
+            const rankIndex = board.findIndex(u => u.id === currentUser.uid);
+            if (rankIndex !== -1) {
+              setPlayerRank(rankIndex + 1);
+            }
+          } catch (e) {
+            
+          }
         } else {
           const isGuest = localStorage.getItem("isGuest") === "true";
           if (isGuest) {
@@ -166,6 +177,20 @@ export default function MainMenu({ setScreen }) {
     setShowInstallModal(false);
   };
 
+  const getRankBadge = () => {
+    if (!playerRank) return null;
+    let colorClass = "text-zinc-300 bg-white/10 border-white/20";
+    if (playerRank === 1) colorClass = "text-amber-400 bg-amber-400/10 border-amber-400/30 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]";
+    else if (playerRank === 2) colorClass = "text-slate-300 bg-slate-300/10 border-slate-300/30 drop-shadow-[0_0_8px_rgba(203,213,225,0.5)]";
+    else if (playerRank === 3) colorClass = "text-amber-700 bg-amber-700/10 border-amber-700/30 drop-shadow-[0_0_8px_rgba(180,83,9,0.5)]";
+
+    return (
+      <div className={`flex items-center justify-center px-2 py-0.5 rounded border text-[10px] font-bold tracking-widest ${colorClass}`}>
+        TOP {playerRank}
+      </div>
+    );
+  };
+
   const MenuButton = ({ text, onClick, isPrimary = false, disabled = false }) => (
     <button
       onClick={onClick}
@@ -228,9 +253,12 @@ export default function MainMenu({ setScreen }) {
           </h1>
 
           <div className="flex flex-col items-center bg-black/40 px-10 py-4 md:px-14 md:py-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl shrink-0">
-            <span className="text-sm font-medium text-emerald-400 tracking-widest mb-4 uppercase drop-shadow-md">
-              {playerNickname ? playerNickname : "GUEST"}
-            </span>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-sm font-medium text-emerald-400 tracking-widest uppercase drop-shadow-md">
+                {playerNickname ? playerNickname : "GUEST"}
+              </span>
+              {getRankBadge()}
+            </div>
             <span className="text-[10px] md:text-xs text-zinc-400 tracking-widest uppercase mb-1 md:mb-2">
               High Score
             </span>
