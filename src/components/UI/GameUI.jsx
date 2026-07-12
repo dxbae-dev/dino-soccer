@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { EventBus } from "../../game/EventBus";
 import { useAuth } from "../../firebase/AuthContext";
-import { updateUserScore } from "../../firebase/userService";
+import { updateUserScore, getUserProfile } from "../../firebase/userService";
 
 const msgsNegative = ["TOUGH MATCH", "THAT HURT", "BETTER LUCK NEXT ROUND", "SHAKE IT OFF", "OFF DAY", "NOT THE RESULT YOU WANTED", "ROUGH START", "KEEP YOUR HEAD UP", "EVERY PRO LEARNS THIS WAY", "THE COMEBACK STARTS NOW"];
 const msgsHigh = ["NEW HIGH SCORE", "NEW PERSONAL BEST", "RECORD BROKEN", "TOP PERFORMANCE", "THAT WAS IMPRESSIVE", "UNSTOPPABLE", "ELITE RUN", "YOU SET THE BAR", "HISTORY MADE", "PEAK PERFORMANCE", "LEGENDARY RUN"];
@@ -30,9 +30,24 @@ export default function GameUI({ onExit, children }) {
   const [activeCard, setActiveCard] = useState(null); 
 
   useEffect(() => {
+    if (currentUser) {
+      const isGuest = localStorage.getItem("isGuest") === "true";
+      if (!isGuest) {
+        getUserProfile(currentUser.uid).then(profile => {
+          if (profile) {
+            setHighScore(profile.highScore);
+            localStorage.setItem("highScore", profile.highScore);
+          }
+        });
+      }
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
     const handleScore = (newScore) => {
       setScore(newScore);
-      if (newScore > highScore && highScore > 0 && !isNewRecord) {
+      const currentHigh = parseInt(localStorage.getItem('highScore') || "0");
+      if (newScore > currentHigh && !isNewRecord) {
         setIsNewRecord(true);
       }
     };
@@ -64,14 +79,19 @@ export default function GameUI({ onExit, children }) {
 
     const handleGameOver = async ({ score: finalScore, customMessage }) => {
       setIsGameOver(true);
+      const currentHigh = parseInt(localStorage.getItem('highScore') || "0");
+      const isGuest = localStorage.getItem('isGuest') === 'true';
       
-      if (currentUser && finalScore > highScore) {
-        try {
-          await updateUserScore(currentUser.uid, highScore, Math.floor(finalScore));
-          setHighScore(Math.floor(finalScore));
-          localStorage.setItem('highScore', Math.floor(finalScore));
-        } catch (error) {
-          console.error(error);
+      if (currentUser && finalScore > currentHigh) {
+        setHighScore(Math.floor(finalScore));
+        localStorage.setItem('highScore', Math.floor(finalScore));
+        
+        if (!isGuest) {
+          try {
+            await updateUserScore(currentUser.uid, currentHigh, Math.floor(finalScore));
+          } catch (error) {
+            console.error(error);
+          }
         }
       }
 
@@ -82,10 +102,10 @@ export default function GameUI({ onExit, children }) {
         if (finalScore <= 50) {
           setGameOverMessage(getRandomMsg(msgsNegative));
           setScoreTier("low");
-        } else if (finalScore > highScore && finalScore > 0) {
+        } else if (finalScore > currentHigh && finalScore > 0) {
           setGameOverMessage(getRandomMsg(msgsHigh));
           setScoreTier("high");
-        } else if (finalScore >= highScore * 0.8 && finalScore > 0) {
+        } else if (finalScore >= currentHigh * 0.8 && finalScore > 0) {
           setGameOverMessage(getRandomMsg(msgsAlmost));
           setScoreTier("almost");
         } else {
@@ -123,7 +143,7 @@ export default function GameUI({ onExit, children }) {
       EventBus.off("show-card", handleShowCard);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isGameOver, feverReady, isPaused, highScore, isNewRecord, currentUser]);
+  }, [isGameOver, feverReady, isPaused, isNewRecord, currentUser]);
 
   const togglePause = () => {
     if (isGameOver) return;
@@ -142,7 +162,9 @@ export default function GameUI({ onExit, children }) {
 
   const handleForceQuit = () => {
     setIsPaused(false);
-    EventBus.emit("force-game-over", "EVERY CHAMPION TAKES A BREAK...");
+    setTimeout(() => {
+      EventBus.emit("force-game-over", "EVERY CHAMPION TAKES A BREAK...");
+    }, 10);
   };
 
   const displayScore = Math.max(0, Math.floor(score));
@@ -184,12 +206,9 @@ export default function GameUI({ onExit, children }) {
             <div className="pointer-events-auto">
               <button
                 onClick={togglePause}
-                className="w-12 h-12 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-black/80 transition-all backdrop-blur-md shadow-lg"
+                className="w-12 h-12 rounded-full bg-black/50 border border-white/10 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-black/80 transition-all backdrop-blur-md shadow-lg group"
               >
-                <div className="flex gap-1.5">
-                  <div className="w-1 h-3.5 bg-current rounded-full" />
-                  <div className="w-1 h-3.5 bg-current rounded-full" />
-                </div>
+                <img src="/assets/icons/pause.svg" alt="Pause" className="w-5 h-5 brightness-0 invert group-active:scale-95 transition-transform" />
               </button>
             </div>
           </div>
@@ -204,7 +223,7 @@ export default function GameUI({ onExit, children }) {
           </div>
 
           {showFeverReadyPopup && (
-            <div className="absolute top-[35%] left-1/2 -translate-x-1/2 text-2xl md:text-3xl font-black italic tracking-[0.3em] text-white drop-shadow-[0_0_15px_rgba(239,68,68,1)] animate-pulse z-50 whitespace-nowrap bg-black/40 px-6 py-2 rounded-full border border-red-500/40 backdrop-blur-sm">
+            <div className="absolute top-[15%] left-1/2 -translate-x-1/2 text-2xl md:text-3xl font-black italic tracking-[0.3em] text-white drop-shadow-[0_0_15px_rgba(239,68,68,1)] animate-pulse z-50 whitespace-nowrap bg-black/40 px-6 py-2 rounded-full border border-red-500/50 backdrop-blur-sm">
               FEVER READY
             </div>
           )}
@@ -226,29 +245,29 @@ export default function GameUI({ onExit, children }) {
               onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', true); }}
               onPointerUp={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', false); }}
               onPointerLeave={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'slide', false); }}
-              className="w-16 h-16 rounded-full bg-black/60 border border-white/20 flex items-center justify-center text-zinc-300 active:bg-white/20 active:text-white backdrop-blur-md transition-colors shadow-lg"
+              className="w-16 h-16 rounded-full bg-black/60 border border-white/20 flex items-center justify-center active:bg-white/20 backdrop-blur-md transition-colors shadow-lg group"
             >
-              <span className="text-2xl">▼</span>
+              <img src="/assets/icons/arrow-down.svg" alt="Slide" className="w-8 h-8 brightness-0 invert opacity-80 group-active:opacity-100 transition-opacity" />
             </button>
 
             <button 
               onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'fever', true); }}
               className={`w-16 h-16 rounded-full flex items-center justify-center transition-all backdrop-blur-md shadow-lg ${
                 feverReady && !feverActive 
-                  ? 'bg-red-500/80 border-2 border-red-400 text-white shadow-[0_0_30px_rgba(239,68,68,0.8)] animate-pulse scale-110' 
-                  : 'bg-black/30 border border-white/5 text-zinc-600'
+                  ? 'bg-red-500/80 border-2 border-red-400 shadow-[0_0_30px_rgba(239,68,68,0.8)] animate-pulse scale-110' 
+                  : 'bg-black/30 border border-white/5'
               }`}
             >
-              <div className="w-4 h-4 bg-current rotate-45 rounded-sm"></div>
+              <img src="/assets/icons/zap.svg" alt="Fever" className={`w-8 h-8 brightness-0 invert ${!(feverReady && !feverActive) && 'opacity-30'}`} />
             </button>
 
             <button 
               onPointerDown={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'jump', true); }}
               onPointerUp={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'jump', false); }}
               onPointerLeave={(e) => { e.preventDefault(); EventBus.emit('virtual-input', 'jump', false); }}
-              className="w-16 h-16 rounded-full bg-black/60 border border-white/30 flex items-center justify-center text-white active:bg-white/30 backdrop-blur-md transition-colors shadow-xl"
+              className="w-16 h-16 rounded-full bg-black/60 border border-white/30 flex items-center justify-center active:bg-white/30 backdrop-blur-md transition-colors shadow-xl group"
             >
-              <span className="text-2xl">▲</span>
+              <img src="/assets/icons/arrow-up.svg" alt="Jump" className="w-8 h-8 brightness-0 invert opacity-90 group-active:opacity-100 transition-opacity" />
             </button>
           </div>
         </div>
@@ -289,20 +308,24 @@ export default function GameUI({ onExit, children }) {
             <div className="flex flex-col gap-4 w-full">
               {isGameOver ? (
                 <>
-                  <button onClick={handleRetry} className="w-full py-4 rounded-full bg-white text-black font-medium tracking-widest uppercase text-xs hover:bg-zinc-200 transition-colors">
-                    Retry
+                  <button onClick={handleRetry} className="flex items-center justify-center gap-3 w-full py-4 rounded-full bg-white text-black font-medium tracking-widest uppercase text-xs hover:bg-zinc-200 transition-colors">
+                    <img src="/assets/icons/refresh-ccw.svg" alt="Retry" className="w-4 h-4 brightness-0" />
+                    RETRY
                   </button>
-                  <button onClick={onExit} className="w-full py-4 rounded-full bg-white/5 border border-white/10 text-zinc-300 font-light tracking-widest uppercase text-xs hover:bg-white/10 hover:text-white transition-colors">
-                    Return to Menu
+                  <button onClick={onExit} className="flex items-center justify-center gap-3 w-full py-4 rounded-full bg-white/5 border border-white/10 text-zinc-300 font-light tracking-widest uppercase text-xs hover:bg-white/10 hover:text-white transition-colors">
+                    <img src="/assets/icons/home.svg" alt="Menu" className="w-4 h-4 brightness-0 invert" />
+                    RETURN TO MENU
                   </button>
                 </>
               ) : (
                 <>
-                  <button onClick={togglePause} className="w-full py-4 rounded-full bg-white text-black font-medium tracking-widest uppercase text-xs hover:bg-zinc-200 transition-colors">
-                    Resume
+                  <button onClick={togglePause} className="flex items-center justify-center gap-3 w-full py-4 rounded-full bg-white text-black font-medium tracking-widest uppercase text-xs hover:bg-zinc-200 transition-colors">
+                    <img src="/assets/icons/play.svg" alt="Resume" className="w-4 h-4 brightness-0" />
+                    RESUME
                   </button>
-                  <button onClick={handleForceQuit} className="w-full py-4 rounded-full bg-white/5 border border-white/10 text-zinc-300 font-light tracking-widest uppercase text-xs hover:bg-white/10 hover:text-white transition-colors">
-                    Quit Match
+                  <button onClick={handleForceQuit} className="flex items-center justify-center gap-3 w-full py-4 rounded-full bg-white/5 border border-white/10 text-zinc-300 font-light tracking-widest uppercase text-xs hover:bg-white/10 hover:text-white transition-colors">
+                    <img src="/assets/icons/x.svg" alt="Quit" className="w-4 h-4 brightness-0 invert" />
+                    QUIT MATCH
                   </button>
                 </>
               )}

@@ -7,17 +7,18 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.baseScale = scale;
+    this.baseScale = scale * 0.5;
     this.setScale(this.baseScale);
     
-    this.body.setSize(40, 80);
-    this.body.setOffset(22, 16);
+    this.body.setSize(80, 160);
+    this.body.setOffset(44, 32);
     this.setCollideWorldBounds(true);
     
     this.setVelocity(0, 0);
 
     this.isCelebrating = false;
     this.postFeverInvincible = false;
+    this.isHit = false;
     this.lastGhost = 0;
     this.wasTouchingDown = false;
     this.lastSpark = 0;
@@ -52,8 +53,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         frameRate: 10,
       });
       scene.anims.create({
-        key: "celebrate",
+        key: "hit_air",
         frames: [{ key: "player", frame: 6 }],
+        frameRate: 10,
+      });
+      scene.anims.create({
+        key: "hit_ground",
+        frames: [{ key: "player", frame: 7 }],
         frameRate: 10,
       });
     }
@@ -100,8 +106,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.isCelebrating = false;
       this.clearTint();
       
-      this.body.setSize(40, 80);
-      this.body.setOffset(22, 16);
+      this.body.setSize(80, 160);
+      this.body.setOffset(44, 32);
 
       this.postFeverInvincible = true;
       this.scene.tweens.add({
@@ -130,9 +136,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const isTouchingDown = this.body.touching.down;
 
     if (this.isCelebrating) {
-      this.play("celebrate", true);
-      this.body.setSize(40, 80);
-      this.body.setOffset(22, 16);
+      this.play("run", true);
+      this.body.setSize(80, 160);
+      this.body.setOffset(44, 32);
 
       if (this.scene.time.now > this.lastGhost + 60) {
         const ghost = this.scene.add.sprite(this.x, this.y, "player", this.frame.name);
@@ -143,7 +149,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.tweens.add({
             targets: ghost,
             alpha: 0,
-            scale: this.baseScale * 0.5,
+            scale: this.baseScale,
             x: this.x - 50,
             duration: 350,
             onComplete: () => ghost.destroy()
@@ -206,27 +212,36 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.setVelocityY(-250);
     }
 
-    if (!isTouchingDown) {
-      this.play("jump", true);
-      this.body.setSize(40, 80);
-      this.body.setOffset(22, 16);
-    } else if (isFastFalling) {
-      this.play("slide", true);
-      this.body.setSize(70, 40);
-      this.body.setOffset(7, 56);
-      
-      if (this.scene.time.now > this.lastSpark + 60) {
-        this.spawnSpark();
-        this.lastSpark = this.scene.time.now;
+    if (!this.isHit) {
+      if (!isTouchingDown) {
+        this.play("jump", true);
+        this.body.setSize(80, 160);
+        this.body.setOffset(44, 32);
+      } else if (isFastFalling) {
+        this.play("slide", true);
+        this.body.setSize(140, 80);
+        this.body.setOffset(14, 112);
+        
+        if (this.scene.time.now > this.lastSpark + 60) {
+          this.spawnSpark();
+          this.lastSpark = this.scene.time.now;
+        }
+      } else {
+        this.play("run", true);
+        this.body.setSize(80, 160);
+        this.body.setOffset(44, 32);
       }
-    } else {
-      this.play("run", true);
-      this.body.setSize(40, 80);
-      this.body.setOffset(22, 16);
     }
   }
 
-  takeDamage() {
+  takeDamage(isAerial = false) {
+    this.isHit = true;
+    this.play(isAerial ? "hit_air" : "hit_ground", true);
+    
+    this.scene.time.delayedCall(400, () => {
+      this.isHit = false;
+    });
+
     this.postFeverInvincible = true;
     this.scene.cameras.main.shake(200, 0.025);
     this.scene.tweens.add({

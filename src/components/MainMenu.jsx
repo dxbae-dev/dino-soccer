@@ -4,8 +4,8 @@ import { getUserProfile, isNicknameAvailable, createUserProfile, loginWithGoogle
 
 export default function MainMenu({ setScreen }) {
   const { currentUser } = useAuth();
-  const [highScore, setHighScore] = useState(0);
-  const [playerNickname, setPlayerNickname] = useState("");
+  const [highScore, setHighScore] = useState(() => parseInt(localStorage.getItem('highScore') || "0"));
+  const [playerNickname, setPlayerNickname] = useState(() => localStorage.getItem('playerNickname') || "");
   const [needsNickname, setNeedsNickname] = useState(false);
   const [nickInput, setNickInput] = useState("");
   const [nickError, setNickError] = useState("");
@@ -25,11 +25,19 @@ export default function MainMenu({ setScreen }) {
         const profile = await getUserProfile(currentUser.uid);
         if (profile) {
           setHighScore(profile.highScore);
+          localStorage.setItem("highScore", profile.highScore);
           setPlayerNickname(profile.nickname);
+          localStorage.setItem("playerNickname", profile.nickname);
+          localStorage.removeItem("isGuest");
           setNeedsNickname(false);
           setRecoveryMode(false);
         } else {
-          setNeedsNickname(true);
+          const isGuest = localStorage.getItem("isGuest") === "true";
+          if (isGuest) {
+            setNeedsNickname(false);
+          } else {
+            setNeedsNickname(true);
+          }
         }
       }
     };
@@ -67,6 +75,9 @@ export default function MainMenu({ setScreen }) {
       const newProfile = await createUserProfile(currentUser.uid, trimmed);
       setPlayerNickname(newProfile.nickname);
       setHighScore(newProfile.highScore);
+      localStorage.setItem("highScore", newProfile.highScore);
+      localStorage.setItem("playerNickname", newProfile.nickname);
+      localStorage.removeItem("isGuest");
       setNewProfileData(newProfile);
     } else {
       setNickError("NICKNAME IS ALREADY TAKEN");
@@ -113,6 +124,9 @@ export default function MainMenu({ setScreen }) {
         const profile = await getUserProfile(currentUser.uid);
         setPlayerNickname(profile.nickname);
         setHighScore(profile.highScore);
+        localStorage.setItem("highScore", profile.highScore);
+        localStorage.setItem("playerNickname", profile.nickname);
+        localStorage.removeItem("isGuest");
         setNeedsNickname(false);
         setRecoveryMode(false);
       } else {
@@ -155,6 +169,24 @@ export default function MainMenu({ setScreen }) {
     </button>
   );
 
+  const IconButton = ({ icon, onClick, disabled }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg backdrop-blur-md border group ${
+        disabled 
+          ? "opacity-50 cursor-not-allowed bg-black/40 border-white/10" 
+          : "bg-black/40 hover:bg-white border-white/10 hover:border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] active:scale-95"
+      }`}
+    >
+      <img 
+        src={`/assets/icons/${icon}.svg`} 
+        alt={icon} 
+        className={`w-6 h-6 transition-all duration-300 brightness-0 invert ${!disabled ? "group-hover:invert-0" : ""}`} 
+      />
+    </button>
+  );
+
   const displayScore = Math.max(0, parseInt(highScore));
   const formattedScore = displayScore.toString().padStart(5, "0");
   const hideScrollbar = "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
@@ -183,11 +215,9 @@ export default function MainMenu({ setScreen }) {
           </h1>
 
           <div className="flex flex-col items-center bg-black/40 px-10 py-4 md:px-14 md:py-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl shrink-0">
-            {playerNickname && (
-              <span className="text-sm font-medium text-emerald-400 tracking-widest mb-4 uppercase drop-shadow-md">
-                {playerNickname}
-              </span>
-            )}
+            <span className="text-sm font-medium text-emerald-400 tracking-widest mb-4 uppercase drop-shadow-md">
+              {playerNickname ? playerNickname : "GUEST"}
+            </span>
             <span className="text-[10px] md:text-xs text-zinc-400 tracking-widest uppercase mb-1 md:mb-2">
               High Score
             </span>
@@ -199,13 +229,17 @@ export default function MainMenu({ setScreen }) {
 
         <div className="flex flex-col items-center justify-center w-full md:w-1/2 shrink-0 mt-2 md:mt-0">
           <MenuButton text="Play" onClick={() => setScreen("game")} isPrimary={true} disabled={needsNickname || !currentUser} />
-          <MenuButton text="Account" onClick={() => setScreen("account")} disabled={needsNickname || !currentUser} />
           <MenuButton text="How to Play" onClick={() => setScreen("howToPlay")} disabled={needsNickname || !currentUser} />
           <MenuButton text="Rules" onClick={() => setScreen("rules")} disabled={needsNickname || !currentUser} />
-          <MenuButton text="Credits" onClick={() => setScreen("credits")} disabled={needsNickname || !currentUser} />
           {installPrompt && (
             <MenuButton text="Install App" onClick={handleInstallClick} disabled={needsNickname || !currentUser} />
           )}
+
+          <div className="flex gap-4 mt-2 md:mt-4">
+            <IconButton icon="trophy" onClick={() => setScreen("leaderboard")} disabled={needsNickname || !currentUser} />
+            <IconButton icon="user" onClick={() => setScreen("account")} disabled={needsNickname || !currentUser} />
+            <IconButton icon="info" onClick={() => setScreen("credits")} disabled={needsNickname || !currentUser} />
+          </div>
         </div>
 
       </div>
@@ -213,6 +247,7 @@ export default function MainMenu({ setScreen }) {
       {showInstallModal && installPrompt && !needsNickname && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-zinc-950/80 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="flex flex-col items-center w-full max-w-sm p-8 rounded-3xl bg-black/60 border border-white/10 shadow-2xl text-center animate-in zoom-in-95 duration-500">
+            <img src="/assets/icons/download.svg" alt="Install" className="w-10 h-10 mb-4 opacity-80 brightness-0 invert" />
             <h3 className="text-lg font-light text-white tracking-[0.2em] uppercase mb-4">
               Install Game
             </h3>
@@ -222,15 +257,15 @@ export default function MainMenu({ setScreen }) {
             <div className="flex flex-col w-full gap-3">
               <button
                 onClick={handleInstallClick}
-                className="w-full py-4 rounded-full bg-white text-black font-medium tracking-widest uppercase text-xs hover:bg-zinc-200 transition-colors active:scale-95 shadow-lg"
+                className="w-full py-4 rounded-full bg-white text-black font-medium tracking-widest uppercase text-xs hover:bg-zinc-200 transition-colors active:scale-95 shadow-lg flex items-center justify-center gap-2"
               >
-                Install Now
+                INSTALL NOW
               </button>
               <button
                 onClick={handleDismissInstall}
                 className="w-full py-4 rounded-full bg-transparent border border-white/10 text-zinc-300 font-light tracking-widest uppercase text-xs hover:bg-white/10 hover:text-white transition-colors active:scale-95"
               >
-                Not Now
+                NOT NOW
               </button>
             </div>
           </div>
@@ -264,8 +299,9 @@ export default function MainMenu({ setScreen }) {
                 <button 
                   onClick={handlePostRegGoogle}
                   disabled={isSubmitting}
-                  className="w-full py-4 rounded-full bg-blue-600/90 text-white font-medium tracking-widest uppercase text-xs hover:bg-blue-500 transition-colors shadow-lg disabled:opacity-50 mb-3"
+                  className="w-full py-4 rounded-full bg-blue-600/90 text-white font-medium tracking-widest uppercase text-xs hover:bg-blue-500 transition-colors shadow-lg disabled:opacity-50 mb-3 flex items-center justify-center gap-3"
                 >
+                  <img src="/assets/icons/google.svg" alt="Google" className="w-4 h-4 brightness-0 invert" />
                   {isSubmitting ? "WAIT..." : "SECURE WITH GOOGLE INSTEAD"}
                 </button>
                 <button 
@@ -296,6 +332,7 @@ export default function MainMenu({ setScreen }) {
                 <div className="h-4 mb-4">
                   {nickError && <span className="text-red-400 text-[10px] uppercase tracking-widest block animate-in fade-in">{nickError}</span>}
                 </div>
+                
                 <button
                   type="submit"
                   disabled={isSubmitting || nickInput.trim().length < 3}
@@ -303,6 +340,19 @@ export default function MainMenu({ setScreen }) {
                 >
                   {isSubmitting ? "SAVING..." : "CONFIRM"}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem("isGuest", "true");
+                    setNeedsNickname(false);
+                    setNickError("");
+                  }}
+                  className="w-full py-4 rounded-full bg-transparent border border-white/20 text-zinc-300 font-medium tracking-widest uppercase text-xs hover:bg-white/10 transition-colors active:scale-95 mb-4"
+                >
+                  PLAY AS GUEST
+                </button>
+
                 <button
                   type="button"
                   onClick={() => { setRecoveryMode(true); setNickError(""); }}
@@ -320,8 +370,9 @@ export default function MainMenu({ setScreen }) {
                 <button 
                   onClick={handleRecoverGoogle} 
                   disabled={isSubmitting} 
-                  className="w-full py-3 rounded-full bg-blue-600/90 text-white font-medium tracking-widest uppercase text-xs hover:bg-blue-500 transition-colors shadow-lg disabled:opacity-50 mb-4"
+                  className="w-full py-3 rounded-full bg-blue-600/90 text-white font-medium tracking-widest uppercase text-xs hover:bg-blue-500 transition-colors shadow-lg disabled:opacity-50 mb-4 flex items-center justify-center gap-3"
                 >
+                  <img src="/assets/icons/google.svg" alt="Google" className="w-4 h-4 brightness-0 invert" />
                   {isSubmitting ? "WAIT..." : "RECOVER WITH GOOGLE"}
                 </button>
 
@@ -354,8 +405,9 @@ export default function MainMenu({ setScreen }) {
                   <button 
                     type="submit" 
                     disabled={isSubmitting} 
-                    className="w-full py-3 rounded-full bg-amber-500/90 text-black font-medium tracking-widest uppercase text-xs hover:bg-amber-400 transition-colors disabled:opacity-50 mb-4"
+                    className="w-full py-3 rounded-full bg-amber-500/90 text-black font-medium tracking-widest uppercase text-xs hover:bg-amber-400 transition-colors disabled:opacity-50 mb-4 flex items-center justify-center gap-3"
                   >
+                    <img src="/assets/icons/refresh-ccw.svg" alt="Recover" className="w-4 h-4 brightness-0" />
                     {isSubmitting ? "SEARCHING..." : "RECOVER WITH CODE"}
                   </button>
                 </form>
@@ -363,7 +415,7 @@ export default function MainMenu({ setScreen }) {
                 <button
                   type="button"
                   onClick={() => { setRecoveryMode(false); setNickError(""); }}
-                  className="text-[10px] text-zinc-400 hover:text-white uppercase tracking-widest transition-colors underline underline-offset-4"
+                  className="text-[10px] text-zinc-400 hover:text-white uppercase tracking-widest transition-colors underline underline-offset-4 mt-2"
                 >
                   Create new account instead
                 </button>

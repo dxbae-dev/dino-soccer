@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { onAuthStateChanged, signInAnonymously, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { auth } from './config';
 
 const AuthContext = createContext();
@@ -13,6 +13,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
@@ -21,21 +23,16 @@ export function AuthProvider({ children }) {
         try {
           await signInAnonymously(auth);
         } catch (error) {
-          console.error(error);
           setLoading(false);
         }
       }
     });
-
+    
     return unsubscribe;
   }, []);
 
-  const value = {
-    currentUser
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ currentUser }}>
       {!loading && children}
     </AuthContext.Provider>
   );

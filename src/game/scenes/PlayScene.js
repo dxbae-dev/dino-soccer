@@ -9,7 +9,7 @@ export default class PlayScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.spritesheet("player", "/assets/player.png", { frameWidth: 84, frameHeight: 96 });
+    this.load.spritesheet("player", "/assets/player.png", { frameWidth: 168, frameHeight: 192 });
     this.load.spritesheet("obstacles", "/assets/obstacles.png", { frameWidth: 64, frameHeight: 64 });
   }
 
@@ -245,7 +245,8 @@ export default class PlayScene extends Phaser.Scene {
     if (player.postFeverInvincible) return; 
 
     obstacle.body.enable = false;
-    this.player.takeDamage();
+    const isAerial = obstacle.y < this.groundY - 10;
+    this.player.takeDamage(isAerial);
     this.destroyObstacleAnim(obstacle);
 
     this.lives--;

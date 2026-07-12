@@ -47,8 +47,8 @@ function App() {
       <div 
         className={`absolute inset-0 z-0 pointer-events-none transition-all duration-500 ease-in-out ${
           isDark 
-            ? "bg-zinc-800/50 backdrop-blur-md" 
-            : "bg-zinc-800/50 backdrop-blur-[1px]"
+            ? "bg-zinc-900/60 backdrop-blur-md" 
+            : "bg-zinc-900/50 backdrop-blur-[1px]"
         }`}
       ></div>
 
