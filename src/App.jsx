@@ -4,6 +4,7 @@ import MainMenu from "./components/MainMenu";
 import InfoScreen from "./components/InfoScreen";
 import GameUI from "./components/UI/GameUI";
 import AccountScreen from "./components/AccountScreen";
+import LeaderboardScreen from "./components/LeaderboardScreen";
 import { EventBus } from "./game/EventBus";
 
 function App() {
@@ -66,6 +67,8 @@ function App() {
         )}
 
         {currentScreen === "account" && <AccountScreen setScreen={setCurrentScreen} />}
+        
+        {currentScreen === "leaderboard" && <LeaderboardScreen setScreen={setCurrentScreen} />}
       </div>
     </div>
   );

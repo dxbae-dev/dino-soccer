@@ -34,7 +34,7 @@ export default function GameUI({ onExit, children }) {
       const isGuest = localStorage.getItem("isGuest") === "true";
       if (!isGuest) {
         getUserProfile(currentUser.uid).then(profile => {
-          if (profile) {
+          if (profile && profile.highScore !== undefined) {
             setHighScore(profile.highScore);
             localStorage.setItem("highScore", profile.highScore);
           }
@@ -77,18 +77,23 @@ export default function GameUI({ onExit, children }) {
       }
     };
 
-    const handleGameOver = async ({ score: finalScore, customMessage }) => {
+    const handleGameOver = async (payload) => {
       setIsGameOver(true);
+      
+      const finalScore = payload?.score !== undefined ? payload.score : 0;
+      const customMessage = payload?.customMessage || null;
+      
+      const numericFinalScore = Math.floor(finalScore);
       const currentHigh = parseInt(localStorage.getItem('highScore') || "0");
       const isGuest = localStorage.getItem('isGuest') === 'true';
       
-      if (currentUser && finalScore >= currentHigh) {
-        setHighScore(Math.floor(finalScore));
-        localStorage.setItem('highScore', Math.floor(finalScore));
+      if (numericFinalScore >= currentHigh && numericFinalScore > 0) {
+        setHighScore(numericFinalScore);
+        localStorage.setItem('highScore', numericFinalScore);
         
-        if (!isGuest) {
+        if (currentUser && !isGuest) {
           try {
-            await updateUserScore(currentUser.uid, currentHigh, Math.floor(finalScore));
+            await updateUserScore(currentUser.uid, currentHigh, numericFinalScore);
           } catch (error) {
             console.error(error);
           }
@@ -99,13 +104,13 @@ export default function GameUI({ onExit, children }) {
         setGameOverMessage(customMessage);
         setScoreTier("normal");
       } else {
-        if (finalScore <= 50) {
+        if (numericFinalScore <= 50) {
           setGameOverMessage(getRandomMsg(msgsNegative));
           setScoreTier("low");
-        } else if (finalScore > currentHigh && finalScore > 0) {
+        } else if (numericFinalScore > currentHigh && numericFinalScore > 0) {
           setGameOverMessage(getRandomMsg(msgsHigh));
           setScoreTier("high");
-        } else if (finalScore >= currentHigh * 0.8 && finalScore > 0) {
+        } else if (numericFinalScore >= currentHigh * 0.8 && numericFinalScore > 0) {
           setGameOverMessage(getRandomMsg(msgsAlmost));
           setScoreTier("almost");
         } else {

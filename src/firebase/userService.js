@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, deleteDoc } from "firebase/firestore";
 import { GoogleAuthProvider, linkWithPopup, signInWithPopup } from "firebase/auth";
 import { db, auth } from "./config";
 
@@ -6,6 +6,30 @@ export const getUserProfile = async (uid) => {
   const docRef = doc(db, "users", uid);
   const docSnap = await getDoc(docRef);
   return docSnap.exists() ? docSnap.data() : null;
+};
+
+export const checkProfileExists = async (uid) => {
+  const docRef = doc(db, "users", uid);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists();
+};
+
+export const updateUserScore = async (uid, currentHighScore, newScore) => {
+  const nHighScore = parseInt(currentHighScore);
+  const nNewScore = parseInt(newScore);
+
+  if (nNewScore >= nHighScore) {
+    const userRef = doc(db, "users", uid);
+    try {
+      await updateDoc(userRef, {
+        highScore: nNewScore
+      });
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+  return false;
 };
 
 export const isNicknameAvailable = async (nickname) => {
@@ -19,7 +43,7 @@ export const createUserProfile = async (uid, nickname) => {
   const userRef = doc(db, "users", uid);
   const userData = {
     nickname: nickname,
-    highScore: 0,
+    highScore: parseInt(localStorage.getItem("highScore") || 0),
     isLinked: false,
     transferCode: code
   };
@@ -27,67 +51,58 @@ export const createUserProfile = async (uid, nickname) => {
   return userData;
 };
 
-export const updateUserScore = async (uid, currentHighScore, newScore) => {
-  console.log("Intentando guardar...", { uid, currentHighScore, newScore });
-  
-  const nHighScore = parseInt(currentHighScore);
-  const nNewScore = parseInt(newScore);
-
-  if (nNewScore >= nHighScore) {
-    const userRef = doc(db, "users", uid);
-    try {
-      console.log("Comparación exitosa, escribiendo en Firestore...");
-      await updateDoc(userRef, {
-        highScore: nNewScore
-      });
-      console.log("¡Guardado exitoso!");
-      return true;
-    } catch (error) {
-      console.error("ERROR CRÍTICO EN FIRESTORE:", error); // Esto debería salir si las reglas fallan
-      throw error;
-    }
-  } else {
-    console.log("El score no es mayor al récord, no se guarda.");
-  }
-  return false;
-};
-
-export const linkGoogleAccount = async () => {
-  const provider = new GoogleAuthProvider();
-  const result = await linkWithPopup(auth.currentUser, provider);
-  const userRef = doc(db, "users", result.user.uid);
-  await updateDoc(userRef, { isLinked: true });
-  return result.user;
-};
-
-export const loginWithGoogle = async () => {
-  const provider = new GoogleAuthProvider();
-  const result = await signInWithPopup(auth, provider);
-  return result.user;
-};
-
-export const generateTransferCode = async (uid) => {
+export const generateTransferCode = async (uid, currentCode) => {
   const code = "MOM-" + Math.random().toString(36).substring(2, 6).toUpperCase() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
   const userRef = doc(db, "users", uid);
   await updateDoc(userRef, { transferCode: code });
   return code;
 };
 
-export const recoverWithTransferCode = async (nickname, code, currentUid) => {
+export const recoverWithTransferCode = async (nickname, code, newUid) => {
   const q = query(collection(db, "users"), where("nickname", "==", nickname), where("transferCode", "==", code));
-  const snap = await getDocs(q);
-  if (snap.empty) return false;
-  
-  const oldDoc = snap.docs[0];
-  const oldData = oldDoc.data();
-  const oldUid = oldDoc.id;
+  const querySnapshot = await getDocs(q);
+  if (!querySnapshot.empty) {
+    const oldDoc = querySnapshot.docs[0];
+    const oldData = oldDoc.data();
+    const oldUid = oldDoc.id;
 
-  await setDoc(doc(db, "users", currentUid), {
-    ...oldData,
-    transferCode: null
-  });
+    await setDoc(doc(db, "users", newUid), oldData);
+    await deleteDoc(doc(db, "users", oldUid));
+    return true;
+  }
+  return false;
+};
 
-  await deleteDoc(doc(db, "users", oldUid));
-  
-  return true;
+export const loginWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  return await signInWithPopup(auth, provider);
+};
+
+export const linkGoogleAccount = async () => {
+  const provider = new GoogleAuthProvider();
+  if (auth.currentUser) {
+    await linkWithPopup(auth.currentUser, provider);
+    const userRef = doc(db, "users", auth.currentUser.uid);
+    await updateDoc(userRef, { isLinked: true });
+  }
+};
+
+export const getLeaderboard = async (limitCount = 10) => {
+  try {
+    const q = query(
+      collection(db, "users"), 
+      orderBy("highScore", "desc"), 
+      limit(limitCount)
+    );
+    const querySnapshot = await getDocs(q);
+    const leaderboard = [];
+    querySnapshot.forEach((doc) => {
+      if (doc.data().highScore > 0) {
+        leaderboard.push({ id: doc.id, ...doc.data() });
+      }
+    });
+    return leaderboard;
+  } catch (error) {
+    return [];
+  }
 };

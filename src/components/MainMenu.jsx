@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../firebase/AuthContext";
-import { getUserProfile, isNicknameAvailable, createUserProfile, loginWithGoogle, recoverWithTransferCode, linkGoogleAccount } from "../firebase/userService";
+import { getUserProfile, isNicknameAvailable, createUserProfile, loginWithGoogle, recoverWithTransferCode, linkGoogleAccount, checkProfileExists } from "../firebase/userService";
 
 export default function MainMenu({ setScreen }) {
   const { currentUser } = useAuth();
@@ -69,19 +69,24 @@ export default function MainMenu({ setScreen }) {
     setIsSubmitting(true);
     setNickError("");
     
-    const available = await isNicknameAvailable(trimmed);
-    
-    if (available) {
-      const newProfile = await createUserProfile(currentUser.uid, trimmed);
-      setPlayerNickname(newProfile.nickname);
-      setHighScore(newProfile.highScore);
-      localStorage.setItem("highScore", newProfile.highScore);
-      localStorage.setItem("playerNickname", newProfile.nickname);
-      localStorage.removeItem("isGuest");
-      setNewProfileData(newProfile);
-    } else {
-      setNickError("NICKNAME IS ALREADY TAKEN");
+    try {
+      const available = await isNicknameAvailable(trimmed);
+      
+      if (available) {
+        const newProfile = await createUserProfile(currentUser.uid, trimmed);
+        setPlayerNickname(newProfile.nickname);
+        setHighScore(newProfile.highScore);
+        localStorage.setItem("highScore", newProfile.highScore);
+        localStorage.setItem("playerNickname", newProfile.nickname);
+        localStorage.removeItem("isGuest");
+        setNewProfileData(newProfile);
+      } else {
+        setNickError("NICKNAME IS ALREADY TAKEN");
+      }
+    } catch (error) {
+      setNickError("CONNECTION ERROR. TRY AGAIN.");
     }
+    
     setIsSubmitting(false);
   };
 
@@ -107,11 +112,19 @@ export default function MainMenu({ setScreen }) {
     setIsSubmitting(true);
     setNickError("");
     try {
-      await loginWithGoogle();
+      const result = await loginWithGoogle();
+      const exists = await checkProfileExists(result.user.uid);
+      
+      if (!exists) {
+        setNeedsNickname(true);
+        setRecoveryMode(false);
+      } else {
+        window.location.reload(); 
+      }
     } catch (e) {
       setNickError("ERROR RECOVERING ACCOUNT");
-      setIsSubmitting(false);
     }
+    setIsSubmitting(false);
   };
 
   const handleRecoverCode = async (e) => {
