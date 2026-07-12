@@ -11,7 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon-32.png', 'icon-64.png', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'assets/**/*'], 
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,gif,json,wav,mp3}']
+        globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,gif,json,wav,mp3}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
       },
       manifest: {
         name: 'MOMENTUM',
