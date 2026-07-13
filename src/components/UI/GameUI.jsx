@@ -183,6 +183,7 @@ export default function GameUI({ onExit, children }) {
   const handleRetry = () => {
     setIsGameOver(false);
     setIsNewRecord(false);
+    setActiveCard(null); 
     EventBus.emit("restart-game");
   };
 

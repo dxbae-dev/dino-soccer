@@ -170,6 +170,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       Phaser.Input.Keyboard.JustDown(cursors.up) ||
       virtualInput.justUp ||
       gamepadState.justUp;
+
+    if (isUpJustPressed) {
+      this.triggerJump();
+    }
+
     const isUpHeld =
       cursors.space.isDown || cursors.up.isDown || virtualInput.up || gamepadState.up;
     const isDownHeld = cursors.down.isDown || virtualInput.down || gamepadState.down;
