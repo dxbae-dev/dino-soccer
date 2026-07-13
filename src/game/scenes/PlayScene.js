@@ -46,7 +46,7 @@ export default class PlayScene extends Phaser.Scene {
     
     this.speedRelief = 0; 
     
-    this.initialSpeed = -380;
+    this.initialSpeed = -480;
     this.baseSpeed = this.initialSpeed;
     this.currentSpeed = this.initialSpeed; 
     this.lives = 3;
@@ -180,7 +180,7 @@ export default class PlayScene extends Phaser.Scene {
             }
         },
         onComplete: () => {
-            this.feverReq = Math.floor(this.feverReq * 1.85);
+            this.feverReq = Math.floor(this.feverReq * 1.20);
             EventBus.emit("fever-active", false);
             this.speedRelief += 350; 
         }
@@ -263,7 +263,7 @@ export default class PlayScene extends Phaser.Scene {
       if (this.speedRelief < 0) this.speedRelief = 0;
     }
 
-    const speedMultiplier = Math.pow(this.score, 0.55) * 3.0;
+    const speedMultiplier = Math.pow(this.score, 0.55) * 4.0;
     const calculatedSpeed = (this.baseSpeed - speedMultiplier) + this.speedRelief;
     
     this.currentSpeed = Math.max(-1200, Math.min(this.initialSpeed, calculatedSpeed));

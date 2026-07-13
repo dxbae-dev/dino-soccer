@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PhaserGame from "./components/PhaserGame";
 import MainMenu from "./components/MainMenu";
 import InfoScreen from "./components/InfoScreen";
@@ -35,6 +35,10 @@ function App() {
 
   const isDark = currentScreen !== "game" || gameDarken;
 
+  const handleExitGame = useCallback(() => {
+    setCurrentScreen("menu");
+  }, []);
+
   return (
     <div
       className="fixed inset-0 w-full h-[100dvh] overflow-hidden flex flex-col items-center justify-center bg-zinc-950 text-zinc-100 font-sans select-none touch-none antialiased"
@@ -45,11 +49,10 @@ function App() {
         backgroundRepeat: "no-repeat",
       }}
     >
-      <div 
-        className={`absolute inset-0 z-0 pointer-events-none transition-all duration-500 ease-in-out ${
-          isDark 
-            ? "bg-zinc-900/60 backdrop-blur-md" 
-            : "bg-zinc-900/50 backdrop-blur-[1px]"
+      <div className="absolute inset-0 z-0 pointer-events-none bg-zinc-900/50 backdrop-blur-[1px]"></div>
+      <div
+        className={`absolute inset-0 z-0 pointer-events-none bg-zinc-900/60 backdrop-blur-xs transition-opacity duration-500 ease-in-out ${
+          isDark ? "opacity-100" : "opacity-0"
         }`}
       ></div>
 
@@ -57,7 +60,7 @@ function App() {
         {currentScreen === "menu" && <MainMenu setScreen={setCurrentScreen} />}
 
         {currentScreen === "game" && (
-          <GameUI onExit={() => setCurrentScreen("menu")}>
+          <GameUI onExit={handleExitGame}>
             <PhaserGame />
           </GameUI>
         )}
@@ -66,9 +69,13 @@ function App() {
           <InfoScreen screen={currentScreen} setScreen={setCurrentScreen} />
         )}
 
-        {currentScreen === "account" && <AccountScreen setScreen={setCurrentScreen} />}
-        
-        {currentScreen === "leaderboard" && <LeaderboardScreen setScreen={setCurrentScreen} />}
+        {currentScreen === "account" && (
+          <AccountScreen setScreen={setCurrentScreen} />
+        )}
+
+        {currentScreen === "leaderboard" && (
+          <LeaderboardScreen setScreen={setCurrentScreen} />
+        )}
       </div>
     </div>
   );

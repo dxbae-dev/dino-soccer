@@ -11,7 +11,7 @@ export default function InfoScreen({ screen, setScreen }) {
   const hideScrollbar = "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
 
   return (
-    <div className="flex flex-col items-center w-full max-w-sm p-6 md:p-8 rounded-3xl bg-black/50 border border-white/10 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 h-[85vh] max-h-[600px]">
+    <div className="flex flex-col items-center w-full max-w-sm p-6 md:p-8 rounded-3xl bg-black/50 border border-white/10 backdrop-blur-md shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 h-[85vh] max-h-[600px]">
       
       <div className="flex flex-col items-center w-full border-b border-white/10 pb-4 mb-4 shrink-0">
         <h2 className="text-xl font-light text-zinc-100 tracking-[0.2em] uppercase text-center">
