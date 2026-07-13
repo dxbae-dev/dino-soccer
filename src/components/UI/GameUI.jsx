@@ -137,6 +137,8 @@ export default function GameUI({ onExit, children }) {
       }
     };
 
+    const togglePauseFromEvent = () => togglePause();
+
     EventBus.on("update-score", handleScore);
     EventBus.on("update-lives", handleLives);
     EventBus.on("game-over", handleGameOver);
@@ -145,6 +147,7 @@ export default function GameUI({ onExit, children }) {
     EventBus.on("fever-active", handleFeverActive);
     EventBus.on("update-fever-progress", handleFeverProgress);
     EventBus.on("show-card", handleShowCard);
+    EventBus.on("request-pause-toggle", togglePauseFromEvent);
 
     const handleKeyDown = (e) => {
       if (e.key === "Escape") togglePause();
@@ -163,6 +166,7 @@ export default function GameUI({ onExit, children }) {
       EventBus.off("fever-active", handleFeverActive);
       EventBus.off("update-fever-progress", handleFeverProgress);
       EventBus.off("show-card", handleShowCard);
+      EventBus.off("request-pause-toggle", togglePauseFromEvent);
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isGameOver, feverReady, isPaused, isNewRecord, currentUser]);

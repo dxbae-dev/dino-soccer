@@ -132,7 +132,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.sparkEmitter.emitParticleAt(this.x + 15, this.y + 40, 1);
   }
 
-  handleInput(cursors, virtualInput, delta) {
+  handleInput(cursors, virtualInput, gamepadState, delta) {
     const isTouchingDown = this.body.touching.down;
 
     if (this.isCelebrating) {
@@ -168,18 +168,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const isUpJustPressed =
       Phaser.Input.Keyboard.JustDown(cursors.space) ||
       Phaser.Input.Keyboard.JustDown(cursors.up) ||
-      virtualInput.justUp;
+      virtualInput.justUp ||
+      gamepadState.justUp;
     const isUpHeld =
-      cursors.space.isDown || cursors.up.isDown || virtualInput.up;
-    const isDownHeld = cursors.down.isDown || virtualInput.down;
-
-    if (isUpJustPressed) {
-      this.jumpBuffer = 150;
-    } else {
-      this.jumpBuffer -= delta;
-    }
+      cursors.space.isDown || cursors.up.isDown || virtualInput.up || gamepadState.up;
+    const isDownHeld = cursors.down.isDown || virtualInput.down || gamepadState.down;
 
     virtualInput.justUp = false;
+    gamepadState.justUp = false;
 
     const isFastFalling = isDownHeld || this.slideFlag;
 

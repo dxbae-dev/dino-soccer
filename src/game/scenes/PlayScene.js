@@ -68,6 +68,7 @@ export default class PlayScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.virtualInput = { up: false, down: false, justUp: false };
+    this.gamepadState = { up: false, down: false, fever: false, pause: false, justUp: false };
     
     this.input.on('pointerdown', () => {
         if (!this.gameStarted && !this.isPaused && !this.isGameOver) {
@@ -187,10 +188,46 @@ export default class PlayScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    let padUp = false;
+    let padDown = false;
+    let padFever = false;
+    let padPause = false;
+
+    if (this.input.gamepad.total > 0) {
+        const pad = this.input.gamepad.getPad(0);
+        if (pad) {
+            padUp = pad.A || pad.up || (pad.leftStick && pad.leftStick.y < -0.5);
+            padDown = pad.down || pad.B || pad.X || (pad.leftStick && pad.leftStick.y > 0.5);
+            padFever = pad.Y || pad.R1 || pad.R2;
+            padPause = pad.buttons[9] ? pad.buttons[9].value : false;
+        }
+    }
+
+    if (padPause && !this.gamepadState.pause) {
+        if (!this.isGameOver) {
+            EventBus.emit("request-pause-toggle");
+        }
+    }
+    this.gamepadState.pause = padPause;
+
     if (this.isGameOver || this.isPaused) return;
 
+    if (padUp && !this.gamepadState.up) this.gamepadState.justUp = true;
+    
+    if (padFever && !this.gamepadState.fever && this.feverReady) {
+        this.activateFever();
+    }
+
+    this.gamepadState.up = padUp;
+    this.gamepadState.down = padDown;
+    this.gamepadState.fever = padFever;
+
     if (!this.gameStarted) {
-      if (Phaser.Input.Keyboard.JustDown(this.cursors.space) || this.input.activePointer.justDown || this.virtualInput.justUp) {
+      const isActionPressed = Phaser.Input.Keyboard.JustDown(this.cursors.space) || 
+                              this.input.activePointer.justDown || 
+                              this.virtualInput.justUp ||
+                              this.gamepadState.justUp;
+      if (isActionPressed) {
           this.startGame();
       }
       return; 
@@ -237,7 +274,7 @@ export default class PlayScene extends Phaser.Scene {
         this.player.play("run", true);
         this.player.jumpBuffer = 0;
     } else {
-        this.player.handleInput(this.cursors, this.virtualInput, delta);
+        this.player.handleInput(this.cursors, this.virtualInput, this.gamepadState, delta);
     }
 
     this.obstacleManager.update(this.currentSpeed, this.player.x, () => {

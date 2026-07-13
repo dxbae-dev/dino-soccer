@@ -11,6 +11,9 @@ const config = {
     },
     pixelArt: true,
     transparent: true,
+    input: {
+        gamepad: true
+    },
     physics: {
         default: 'arcade',
         arcade: {

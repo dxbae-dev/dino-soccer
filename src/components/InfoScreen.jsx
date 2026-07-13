@@ -68,11 +68,11 @@ export default function InfoScreen({ screen, setScreen }) {
              </div>
              <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-lg">
                <h3 className="text-xs font-medium text-amber-400 tracking-widest uppercase mb-2 text-center drop-shadow-md">Health System</h3>
-               <p className="text-xs text-zinc-300 font-light leading-relaxed text-center">You start with 3 lives (Cards). Hitting an obstacle removes one. Lose all your cards, and it is Game Over.</p>
+               <p className="text-xs text-zinc-300 font-light leading-relaxed text-center">You start with 3 lives. Hitting an obstacle removes one. Lose all your chances, and it is Game Over.</p>
              </div>
              <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-lg">
                <h3 className="text-xs font-medium text-cyan-400 tracking-widest uppercase mb-2 text-center drop-shadow-md">Scoring</h3>
-               <p className="text-xs text-zinc-300 font-light leading-relaxed text-center">Points are awarded continuously as you run. Collecting Yellow Cards grants bonus points and helps build the Fever meter.</p>
+               <p className="text-xs text-zinc-300 font-light leading-relaxed text-center">Points and the Fever meter build continuously as you run. Avoid obstacles to keep your momentum; hitting them deducts points and triggers a penalty card.</p>
              </div>
           </div>
         )}
@@ -85,7 +85,7 @@ export default function InfoScreen({ screen, setScreen }) {
                 </div>
                 <div>
                   <h3 className="text-xs font-medium text-white tracking-widest uppercase mb-1">Jump</h3>
-                  <p className="text-[11px] text-zinc-400 font-light leading-relaxed">Tap the Up button, swipe up, or press SPACE/UP to jump over low obstacles.</p>
+                  <p className="text-[11px] text-zinc-400 font-light leading-relaxed">Tap Up, swipe up, press SPACE/UP, or press A/Cross/Up on Gamepad.</p>
                 </div>
              </div>
 
@@ -95,17 +95,27 @@ export default function InfoScreen({ screen, setScreen }) {
                 </div>
                 <div>
                   <h3 className="text-xs font-medium text-white tracking-widest uppercase mb-1">Slide</h3>
-                  <p className="text-[11px] text-zinc-400 font-light leading-relaxed">Hold the Down button, swipe down, or press DOWN to slide under high obstacles.</p>
+                  <p className="text-[11px] text-zinc-400 font-light leading-relaxed">Hold Down, swipe down, press DOWN, or press B/Circle/Down on Gamepad.</p>
                 </div>
              </div>
 
-             <div className="flex items-center gap-4 bg-black/40 p-4 rounded-2xl border border-red-500/10 shadow-lg">
-                <div className="w-12 h-12 shrink-0 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20 shadow-inner">
+             <div className="flex items-center gap-4 bg-black/40 p-4 rounded-2xl border border-cyan-500/10 shadow-lg">
+                <div className="w-12 h-12 shrink-0 bg-cyan-500/10 rounded-xl flex items-center justify-center border border-cyan-500/20 shadow-inner">
                   <img src="/assets/icons/zap.svg" alt="Fever" className="w-6 h-6 brightness-0 invert opacity-90" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-medium text-red-400 tracking-widest uppercase mb-1">Fever Mode</h3>
-                  <p className="text-[11px] text-zinc-400 font-light leading-relaxed">Fill the meter to unlock Fever. Tap the Lightning button or press F to become invincible!</p>
+                  <h3 className="text-xs font-medium text-cyan-400 tracking-widest uppercase mb-1">Fever Mode</h3>
+                  <p className="text-[11px] text-zinc-400 font-light leading-relaxed">Fill the meter. Tap Lightning, press F, or press Y/Triangle/R1 on Gamepad.</p>
+                </div>
+             </div>
+
+             <div className="flex items-center gap-4 bg-black/40 p-4 rounded-2xl border border-white/5 shadow-lg">
+                <div className="w-12 h-12 shrink-0 bg-white/5 rounded-xl flex items-center justify-center border border-white/10 shadow-inner">
+                  <img src="/assets/icons/pause.svg" alt="Pause" className="w-6 h-6 brightness-0 invert opacity-90" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-medium text-white tracking-widest uppercase mb-1">Pause</h3>
+                  <p className="text-[11px] text-zinc-400 font-light leading-relaxed">Press ESC on keyboard or Start/Options on Gamepad to pause.</p>
                 </div>
              </div>
           </div>
