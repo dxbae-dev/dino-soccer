@@ -19,9 +19,10 @@ export default class ObstacleManager {
     }
   }
 
-  spawn(currentSpeed, groundY) {
+  spawn(currentSpeed, groundY, score = 0) {
     const width = this.scene.scale.width > 0 ? this.scene.scale.width : window.innerWidth;
-    const isAerial = Phaser.Math.Between(1, 100) > 60;
+    const isAerial = Phaser.Math.Between(1, 100) > 55;
+    const willCrash = isAerial && score > 400 && Phaser.Math.Between(1, 100) > 65;
     const spawnX = width + 250;
 
     let obstacle = this.group.getFirstDead(false);
@@ -33,30 +34,86 @@ export default class ObstacleManager {
       obstacle.body.enable = true;
       this.scene.tweens.killTweensOf(obstacle);
       
+      obstacle.clearTint();
       obstacle.setAlpha(1);
       obstacle.setAngle(0);
     }
 
     if (isAerial) {
-      const randomHeight = Phaser.Math.Between(35, 55);
+      const randomHeight = Phaser.Math.Between(40, 80);
 
       obstacle.setPosition(spawnX, groundY - randomHeight);
       obstacle.setFrame(1);
       obstacle.setOrigin(0.5, 1);
-      obstacle.setScale(this.baseScale);
+      obstacle.setScale(this.baseScale * 0.9);
       obstacle.play("drone_fly");
 
-      obstacle.body.setSize(obstacle.width * 0.7, obstacle.height * 0.5);
-      obstacle.body.setOffset(obstacle.width * 0.15, obstacle.height * 0.25);
+      obstacle.body.setSize(obstacle.width * 0.6, obstacle.height * 0.4);
+      obstacle.body.setOffset(obstacle.width * 0.2, obstacle.height * 0.3);
 
-      this.scene.tweens.add({
-        targets: obstacle,
-        y: obstacle.y - Phaser.Math.Between(8, 15),
-        duration: Phaser.Math.Between(600, 1000),
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.easeInOut",
-      });
+      if (willCrash) {
+        const isMobile = width < 768;
+        const crashX = Phaser.Math.Between(width / 2 + 50, width);
+        const distanceToCrash = spawnX - crashX;
+        const timeToCrash = (distanceToCrash / Math.abs(currentSpeed)) * 1000;
+        
+        const fallDuration = 280;
+        const triggerTime = Math.max(0, timeToCrash - fallDuration);
+
+        if (isMobile) {
+            obstacle.setTint(0xff4444);
+            this.scene.tweens.add({
+                targets: obstacle,
+                alpha: 0.4,
+                yoyo: true,
+                repeat: -1,
+                duration: 70
+            });
+        } else {
+            const warnTime = Math.max(0, triggerTime - 200);
+            this.scene.time.delayedCall(warnTime, () => {
+                if (obstacle.active) {
+                    obstacle.setTint(0xff4444);
+                    this.scene.tweens.add({
+                        targets: obstacle,
+                        alpha: 0.4,
+                        yoyo: true,
+                        repeat: 2,
+                        duration: 60
+                    });
+                }
+            });
+        }
+
+        this.scene.time.delayedCall(triggerTime, () => {
+            if (obstacle.active) {
+                this.scene.tweens.killTweensOf(obstacle);
+                obstacle.alpha = 1;
+                obstacle.setTint(0xff4444);
+                obstacle.anims.stop();
+                obstacle.setFrame(2);
+                
+                const crashAngle = Phaser.Math.Between(70, 110) * Phaser.Math.RND.sign();
+                
+                this.scene.tweens.add({
+                    targets: obstacle,
+                    y: groundY - 18,
+                    angle: crashAngle,
+                    duration: fallDuration,
+                    ease: "Expo.easeIn"
+                });
+            }
+        });
+      } else {
+        this.scene.tweens.add({
+          targets: obstacle,
+          y: obstacle.y - Phaser.Math.Between(10, 20),
+          duration: Phaser.Math.Between(600, 1000),
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.easeInOut",
+        });
+      }
     } else {
       obstacle.setPosition(spawnX, groundY);
       obstacle.setFrame(0);

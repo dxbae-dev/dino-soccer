@@ -37,10 +37,12 @@ export default class PlayScene extends Phaser.Scene {
     
     this.score = 0;
     this.lastSavedScore = 0;
+    this.lastEmittedScore = -1;
     
     this.feverPoints = 0;
     this.feverReq = 500; 
     this.feverReady = false;
+    this.lastEmittedFever = -1;
     
     this.speedRelief = 0; 
     
@@ -49,7 +51,7 @@ export default class PlayScene extends Phaser.Scene {
     this.currentSpeed = this.initialSpeed; 
     this.lives = 3;
 
-    this.groundY = height - (isMobile ? 200 : 70);
+    this.groundY = isMobile ? height * 0.65 : height - 70;
 
     this.ground = this.add.rectangle(width / 2, this.groundY + 32, width * 2, 64, 0xffffff);
     this.physics.add.existing(this.ground, true);
@@ -120,7 +122,11 @@ export default class PlayScene extends Phaser.Scene {
     });
 
     EventBus.emit("update-lives", this.lives);
-    EventBus.emit("update-score", this.score);
+    
+    this.lastEmittedScore = 0;
+    EventBus.emit("update-score", 0);
+    
+    this.lastEmittedFever = 0;
     EventBus.emit("update-fever-progress", 0);
   }
 
@@ -166,7 +172,11 @@ export default class PlayScene extends Phaser.Scene {
         to: 0,
         duration: 4500,
         onUpdate: (tween) => {
-            EventBus.emit("update-fever-progress", tween.getValue());
+            const currentFloorFever = Math.floor(tween.getValue());
+            if (currentFloorFever !== this.lastEmittedFever) {
+                EventBus.emit("update-fever-progress", currentFloorFever);
+                this.lastEmittedFever = currentFloorFever;
+            }
         },
         onComplete: () => {
             this.feverReq = Math.floor(this.feverReq * 1.85);
@@ -197,8 +207,13 @@ export default class PlayScene extends Phaser.Scene {
 
     if (!this.feverReady && !this.player.isCelebrating) {
         this.feverPoints += delta * 0.025;
-        let progress = (this.feverPoints / this.feverReq) * 100;
-        EventBus.emit("update-fever-progress", Math.min(100, progress));
+        let progress = Math.min(100, (this.feverPoints / this.feverReq) * 100);
+        const currentFloorFever = Math.floor(progress);
+        
+        if (currentFloorFever !== this.lastEmittedFever) {
+            EventBus.emit("update-fever-progress", currentFloorFever);
+            this.lastEmittedFever = currentFloorFever;
+        }
         
         if (this.feverPoints >= this.feverReq) {
             this.feverReady = true;
@@ -211,10 +226,10 @@ export default class PlayScene extends Phaser.Scene {
       if (this.speedRelief < 0) this.speedRelief = 0;
     }
 
-    const speedMultiplier = this.score * 0.08; 
+    const speedMultiplier = Math.pow(this.score, 0.6) * 3.5;
     const calculatedSpeed = (this.baseSpeed - speedMultiplier) + this.speedRelief;
     
-    this.currentSpeed = Math.max(-900, Math.min(this.initialSpeed, calculatedSpeed));
+    this.currentSpeed = Math.max(-1200, Math.min(this.initialSpeed, calculatedSpeed));
 
     this.player.setAnimationSpeed(Math.abs(this.currentSpeed) / Math.abs(this.initialSpeed));
 
@@ -229,7 +244,11 @@ export default class PlayScene extends Phaser.Scene {
       this.score += 10;
     });
 
-    EventBus.emit("update-score", Math.max(0, Math.floor(this.score)));
+    const currentFloorScore = Math.max(0, Math.floor(this.score));
+    if (currentFloorScore !== this.lastEmittedScore) {
+        EventBus.emit("update-score", currentFloorScore);
+        this.lastEmittedScore = currentFloorScore;
+    }
   }
 
   hitObstacle(player, obstacle) {
@@ -254,16 +273,17 @@ export default class PlayScene extends Phaser.Scene {
     this.speedRelief += 300;
     
     EventBus.emit("update-lives", this.lives);
-    EventBus.emit("update-score", Math.floor(this.score));
+    
+    const currentFloorScore = Math.floor(this.score);
+    EventBus.emit("update-score", currentFloorScore);
+    this.lastEmittedScore = currentFloorScore;
 
     if (this.lives === 2) {
       EventBus.emit("show-card", "yellow");
-      EventBus.emit("show-damage", "WARNING!");
       player.setTint(0xfcd34d); 
       this.time.delayedCall(800, () => player.clearTint());
     } else if (this.lives === 1) {
       EventBus.emit("show-card", "yellow");
-      EventBus.emit("show-damage", "LAST CHANCE!");
       player.setTint(0xf59e0b); 
       this.time.delayedCall(800, () => player.clearTint());
     } else if (this.lives <= 0) {
@@ -311,7 +331,7 @@ export default class PlayScene extends Phaser.Scene {
     this.time.addEvent({
       delay: delay,
       callback: () => {
-        if (!this.isPaused) this.obstacleManager.spawn(this.currentSpeed, this.groundY);
+        if (!this.isPaused) this.obstacleManager.spawn(this.currentSpeed, this.groundY, this.score);
         this.scheduleNextObstacle();
       },
     });

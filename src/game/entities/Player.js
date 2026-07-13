@@ -7,11 +7,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.baseScale = scale * 0.5;
+    this.baseScale = scale * 0.45;
     this.setScale(this.baseScale);
     
-    this.body.setSize(80, 160);
-    this.body.setOffset(44, 32);
+    this.body.setSize(70, 150);
+    this.body.setOffset(49, 37);
     this.setCollideWorldBounds(true);
     
     this.setVelocity(0, 0);
@@ -100,14 +100,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   startCelebration(duration) {
     this.isCelebrating = true;
     this.postFeverInvincible = false;
-    this.setTint(0xff3333); 
+    this.setTint(0x00d8ff); 
 
     this.scene.time.delayedCall(duration, () => {
       this.isCelebrating = false;
       this.clearTint();
       
-      this.body.setSize(80, 160);
-      this.body.setOffset(44, 32);
+      this.body.setSize(70, 150);
+      this.body.setOffset(49, 37);
 
       this.postFeverInvincible = true;
       this.scene.tweens.add({
@@ -136,14 +136,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const isTouchingDown = this.body.touching.down;
 
     if (this.isCelebrating) {
-      this.play("run", true);
-      this.body.setSize(80, 160);
-      this.body.setOffset(44, 32);
-
       if (this.scene.time.now > this.lastGhost + 60) {
         const ghost = this.scene.add.sprite(this.x, this.y, "player", this.frame.name);
         ghost.setScale(this.scaleX, this.scaleY);
-        ghost.setTint(0xff3333);
+        ghost.setTint(0x00d8ff);
         ghost.setBlendMode(Phaser.BlendModes.ADD);
         
         this.scene.tweens.add({
@@ -156,13 +152,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         });
         this.lastGhost = this.scene.time.now;
       }
-
-      if (isTouchingDown && !this.wasTouchingDown) {
-        this.spawnDust();
-      }
-      this.wasTouchingDown = isTouchingDown;
-      
-      return;
     }
 
     if (isTouchingDown) {
@@ -195,32 +184,32 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const isFastFalling = isDownHeld || this.slideFlag;
 
     if (this.jumpBuffer > 0 && this.coyoteTime > 0) {
-      this.setVelocityY(-720);
+      this.setVelocityY(-640);
       this.jumpBuffer = 0;
       this.coyoteTime = 0;
       this.slideFlag = false;
     }
 
     if (!isTouchingDown && isFastFalling) {
-      this.setVelocityY(1800);
+      this.setVelocityY(1500);
     } else if (
       !isUpHeld &&
       this.jumpBuffer <= 0 &&
-      this.body.velocity.y < -250 &&
+      this.body.velocity.y < -200 &&
       !isFastFalling
     ) {
-      this.setVelocityY(-250);
+      this.setVelocityY(-200);
     }
 
     if (!this.isHit) {
       if (!isTouchingDown) {
         this.play("jump", true);
-        this.body.setSize(80, 160);
-        this.body.setOffset(44, 32);
+        this.body.setSize(70, 150);
+        this.body.setOffset(49, 37);
       } else if (isFastFalling) {
         this.play("slide", true);
-        this.body.setSize(140, 80);
-        this.body.setOffset(14, 112);
+        this.body.setSize(120, 70);
+        this.body.setOffset(24, 117);
         
         if (this.scene.time.now > this.lastSpark + 60) {
           this.spawnSpark();
@@ -228,8 +217,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         }
       } else {
         this.play("run", true);
-        this.body.setSize(80, 160);
-        this.body.setOffset(44, 32);
+        this.body.setSize(70, 150);
+        this.body.setOffset(49, 37);
       }
     }
   }

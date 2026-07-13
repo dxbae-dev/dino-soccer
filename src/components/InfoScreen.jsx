@@ -51,6 +51,10 @@ export default function InfoScreen({ screen, setScreen }) {
                   <span className="text-zinc-500 uppercase tracking-widest text-[9px] block mb-0.5">Lead Developer</span>
                   <span className="font-medium text-white tracking-widest uppercase">Daniel baena</span>
                 </div>
+                <div>
+                  <span className="text-zinc-500 uppercase tracking-widest text-[9px] block mb-0.5">Background Art</span>
+                  <span className="font-medium text-white tracking-widest uppercase">Aidan Yélamos Berbel</span>
+                </div>
               </div>
             </section>
           </div>

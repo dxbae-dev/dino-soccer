@@ -26,7 +26,6 @@ export default function GameUI({ onExit, children }) {
   const [feverReady, setFeverReady] = useState(false);
   const [feverActive, setFeverActive] = useState(false);
   const [feverProgress, setFeverProgress] = useState(0);
-  const [showFeverReadyPopup, setShowFeverReadyPopup] = useState(false);
   const [activeCard, setActiveCard] = useState(null); 
 
   useEffect(() => {
@@ -42,6 +41,23 @@ export default function GameUI({ onExit, children }) {
       }
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setIsPaused((prev) => {
+          if (!prev && !isGameOver) {
+            EventBus.emit("toggle-pause", true);
+            return true;
+          }
+          return prev;
+        });
+      }
+    };
+    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [isGameOver]);
 
   useEffect(() => {
     const handleScore = (newScore) => {
@@ -62,8 +78,7 @@ export default function GameUI({ onExit, children }) {
     const handleFeverReady = (state) => {
       setFeverReady(state);
       if (state) {
-        setShowFeverReadyPopup(true);
-        setTimeout(() => setShowFeverReadyPopup(false), 4000);
+        handleShowCard("fever");
       }
     };
 
@@ -72,7 +87,7 @@ export default function GameUI({ onExit, children }) {
     
     const handleShowCard = (color) => {
       setActiveCard(color);
-      if (color === "yellow") {
+      if (color === "yellow" || color === "fever") {
         setTimeout(() => setActiveCard(null), 1500); 
       }
     };
@@ -223,19 +238,13 @@ export default function GameUI({ onExit, children }) {
           </div>
 
           <div className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 pointer-events-auto">
-            <div className={`w-3 md:w-4 h-40 md:h-64 rounded-full bg-black/50 border border-white/10 relative overflow-hidden backdrop-blur-md transition-all duration-500 ${feverReady && !feverActive ? 'shadow-[0_0_25px_rgba(239,68,68,0.9)] border-red-500 scale-105 animate-pulse' : 'shadow-lg'}`}>
+            <div className={`w-3 md:w-4 h-40 md:h-64 rounded-full bg-black/50 border border-white/10 relative overflow-hidden backdrop-blur-md transition-all duration-500 ${feverReady && !feverActive ? 'shadow-[0_0_25px_rgba(6,182,212,0.9)] border-cyan-500 scale-105 animate-pulse' : 'shadow-lg'}`}>
               <div 
-                className={`absolute bottom-0 w-full transition-all duration-300 ease-out rounded-full ${feverActive ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,1)]' : feverReady ? 'bg-red-500' : 'bg-red-400/50'}`}
+                className={`absolute bottom-0 w-full transition-all duration-300 ease-out rounded-full ${feverActive ? 'bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,1)]' : feverReady ? 'bg-cyan-500' : 'bg-cyan-400/50'}`}
                 style={{ height: `${feverProgress}%` }}
               />
             </div>
           </div>
-
-          {showFeverReadyPopup && (
-            <div className="absolute top-[15%] left-1/2 -translate-x-1/2 text-2xl md:text-3xl font-black italic tracking-[0.3em] text-white drop-shadow-[0_0_15px_rgba(239,68,68,1)] animate-pulse z-50 whitespace-nowrap bg-black/40 px-6 py-2 rounded-full border border-red-500/50 backdrop-blur-sm">
-              FEVER READY
-            </div>
-          )}
 
           {damageText && (
             <div className="absolute top-[40%] left-1/2 -translate-x-1/2 text-xl md:text-2xl font-light tracking-widest text-amber-400 bg-black/80 px-8 py-3 rounded-full backdrop-blur-md border border-amber-400/30 animate-bounce z-50 shadow-2xl whitespace-nowrap">
@@ -243,9 +252,19 @@ export default function GameUI({ onExit, children }) {
             </div>
           )}
 
-          {activeCard === 'yellow' && (
+          {activeCard && (
             <div className="absolute top-[25%] left-1/2 -translate-x-1/2 flex flex-col items-center z-50 pointer-events-none transition-all">
-              <div className="w-14 h-20 md:w-16 md:h-24 rounded-md shadow-[0_0_30px_rgba(251,191,36,0.6)] bg-amber-400 animate-bounce border border-white/20" />
+              {activeCard === 'yellow' && (
+                <div className="w-14 h-20 md:w-16 md:h-24 rounded-md shadow-[0_0_30px_rgba(251,191,36,0.6)] bg-amber-400 animate-bounce border border-white/20" />
+              )}
+              {activeCard === 'red' && (
+                <div className="w-14 h-20 md:w-16 md:h-24 rounded-md shadow-[0_0_30px_rgba(239,68,68,0.6)] bg-red-500 animate-bounce border border-white/20" />
+              )}
+              {activeCard === 'fever' && (
+                <div className="w-14 h-20 md:w-16 md:h-24 rounded-md shadow-[0_0_30px_rgba(6,182,212,0.8)] bg-cyan-500 border-2 border-cyan-400 animate-bounce flex items-center justify-center">
+                  <img src="/assets/icons/zap.svg" alt="Fever" className="w-8 h-8 brightness-0 invert animate-pulse" />
+                </div>
+              )}
             </div>
           )}
 
@@ -267,7 +286,7 @@ export default function GameUI({ onExit, children }) {
               style={{ WebkitTouchCallout: 'none' }}
               className={`w-16 h-16 rounded-full flex items-center justify-center transition-all backdrop-blur-md shadow-lg select-none ${
                 feverReady && !feverActive 
-                  ? 'bg-red-500/80 border-2 border-red-400 shadow-[0_0_30px_rgba(239,68,68,0.8)] animate-pulse scale-110' 
+                  ? 'bg-cyan-500/80 border-2 border-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.8)] animate-pulse scale-110' 
                   : 'bg-black/30 border border-white/5'
               }`}
             >
