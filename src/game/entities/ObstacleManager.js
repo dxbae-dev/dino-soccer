@@ -22,7 +22,7 @@ export default class ObstacleManager {
   spawn(currentSpeed, groundY, score = 0) {
     const width = this.scene.scale.width > 0 ? this.scene.scale.width : window.innerWidth;
     const isAerial = Phaser.Math.Between(1, 100) > 55;
-    const willCrash = isAerial && score > 400 && Phaser.Math.Between(1, 100) > 65;
+    const willCrash = isAerial && score > 500 && Phaser.Math.Between(1, 100) > 90;
     const spawnX = width + 250;
 
     let obstacle = this.group.getFirstDead(false);
@@ -93,11 +93,14 @@ export default class ObstacleManager {
                 obstacle.anims.stop();
                 obstacle.setFrame(2);
                 
+                obstacle.body.setSize(obstacle.width * 0.6, obstacle.height * 0.8);
+                obstacle.body.setOffset(obstacle.width * 0.2, obstacle.height * 0.2);
+                
                 const crashAngle = Phaser.Math.Between(70, 110) * Phaser.Math.RND.sign();
                 
                 this.scene.tweens.add({
                     targets: obstacle,
-                    y: groundY - 18,
+                    y: groundY,
                     angle: crashAngle,
                     duration: fallDuration,
                     ease: "Expo.easeIn"

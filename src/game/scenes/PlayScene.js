@@ -196,9 +196,9 @@ export default class PlayScene extends Phaser.Scene {
     if (this.input.gamepad.total > 0) {
         const pad = this.input.gamepad.getPad(0);
         if (pad) {
-            padUp = pad.A || pad.up || (pad.leftStick && pad.leftStick.y < -0.5);
-            padDown = pad.down || pad.B || pad.X || (pad.leftStick && pad.leftStick.y > 0.5);
-            padFever = pad.Y || pad.R1 || pad.R2;
+            padUp = pad.Y || pad.up || (pad.leftStick && pad.leftStick.y < -0.5);
+            padDown = pad.A || pad.down || (pad.leftStick && pad.leftStick.y > 0.5);
+            padFever = pad.B || pad.R1 || pad.R2;
             padPause = pad.buttons[9] ? pad.buttons[9].value : false;
         }
     }
@@ -235,7 +235,7 @@ export default class PlayScene extends Phaser.Scene {
 
     if (Phaser.Input.Keyboard.JustDown(this.cursors.right) && this.feverReady) this.activateFever();
 
-    this.score += delta * 0.008;
+    this.score += delta * 0.004;
     
     if (Math.floor(this.score) % 100 === 0 && Math.floor(this.score) !== this.lastSavedScore && this.score > 0) {
       this.saveScore();
@@ -263,7 +263,7 @@ export default class PlayScene extends Phaser.Scene {
       if (this.speedRelief < 0) this.speedRelief = 0;
     }
 
-    const speedMultiplier = Math.pow(this.score, 0.6) * 3.5;
+    const speedMultiplier = Math.pow(this.score, 0.55) * 3.0;
     const calculatedSpeed = (this.baseSpeed - speedMultiplier) + this.speedRelief;
     
     this.currentSpeed = Math.max(-1200, Math.min(this.initialSpeed, calculatedSpeed));
@@ -278,7 +278,7 @@ export default class PlayScene extends Phaser.Scene {
     }
 
     this.obstacleManager.update(this.currentSpeed, this.player.x, () => {
-      this.score += 10;
+      this.score += 5;
     });
 
     const currentFloorScore = Math.max(0, Math.floor(this.score));
@@ -294,7 +294,7 @@ export default class PlayScene extends Phaser.Scene {
     if (player.isCelebrating) {
         this.destroyObstacleAnim(obstacle);
         this.cameras.main.shake(100, 0.015);
-        this.score += 10;
+        this.score += 5;
         return;
     }
 
@@ -306,7 +306,7 @@ export default class PlayScene extends Phaser.Scene {
     this.destroyObstacleAnim(obstacle);
 
     this.lives--;
-    this.score = Math.max(0, this.score - 30);
+    this.score = Math.max(0, this.score - 15);
     this.speedRelief += 300;
     
     EventBus.emit("update-lives", this.lives);
