@@ -26,6 +26,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.jumpBuffer = 0;
     this.coyoteTime = 0;
     this.slideFlag = false;
+    this.currentHitboxState = "run";
 
     if (!scene.anims.exists("run")) {
       scene.anims.create({
@@ -82,6 +83,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       emitting: false
     });
 
+    this.ghosts = [];
+    for (let i = 0; i < 8; i++) {
+      let g = scene.add.sprite(0, 0, "player");
+      g.setVisible(false);
+      g.setActive(false);
+      g.setBlendMode(Phaser.BlendModes.ADD);
+      this.ghosts.push(g);
+    }
+    this.ghostIndex = 0;
+
     this.play("idle");
   }
 
@@ -108,6 +119,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       
       this.body.setSize(70, 150);
       this.body.setOffset(49, 37);
+      this.currentHitboxState = "run";
 
       this.postFeverInvincible = true;
       this.scene.tweens.add({
@@ -137,19 +149,28 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (this.isCelebrating) {
       if (this.scene.time.now > this.lastGhost + 60) {
-        const ghost = this.scene.add.sprite(this.x, this.y, "player", this.frame.name);
+        let ghost = this.ghosts[this.ghostIndex];
+        this.ghostIndex = (this.ghostIndex + 1) % this.ghosts.length;
+
+        ghost.setActive(true).setVisible(true);
+        ghost.setPosition(this.x, this.y);
+        ghost.setFrame(this.frame.name);
         ghost.setScale(this.scaleX, this.scaleY);
         ghost.setTint(0x00d8ff);
-        ghost.setBlendMode(Phaser.BlendModes.ADD);
-        
+        ghost.setAlpha(0.6);
+
+        this.scene.tweens.killTweensOf(ghost);
         this.scene.tweens.add({
             targets: ghost,
             alpha: 0,
             scale: this.baseScale,
             x: this.x - 50,
             duration: 350,
-            onComplete: () => ghost.destroy()
+            onComplete: () => {
+                ghost.setActive(false).setVisible(false);
+            }
         });
+        
         this.lastGhost = this.scene.time.now;
       }
     }
@@ -158,6 +179,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.coyoteTime = 80;
     } else {
       this.coyoteTime -= delta;
+    }
+    
+    if (this.jumpBuffer > 0) {
+      this.jumpBuffer -= delta;
     }
 
     if (isTouchingDown && !this.wasTouchingDown) {
@@ -203,14 +228,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (!this.isHit) {
+      let nextState = "run";
+
       if (!isTouchingDown) {
         this.play("jump", true);
-        this.body.setSize(70, 150);
-        this.body.setOffset(49, 37);
+        nextState = "jump";
       } else if (isFastFalling) {
         this.play("slide", true);
-        this.body.setSize(120, 70);
-        this.body.setOffset(24, 117);
+        nextState = "slide";
         
         if (this.scene.time.now > this.lastSpark + 60) {
           this.spawnSpark();
@@ -218,8 +243,19 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         }
       } else {
         this.play("run", true);
-        this.body.setSize(70, 150);
-        this.body.setOffset(49, 37);
+        nextState = "run";
+      }
+
+      if (this.currentHitboxState !== nextState) {
+        this.currentHitboxState = nextState;
+        
+        if (nextState === "slide") {
+          this.body.setSize(120, 70);
+          this.body.setOffset(24, 117);
+        } else {
+          this.body.setSize(70, 150);
+          this.body.setOffset(49, 37);
+        }
       }
     }
   }

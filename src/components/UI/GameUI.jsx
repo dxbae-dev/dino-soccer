@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { EventBus } from "../../game/EventBus";
 import { useAuth } from "../../firebase/AuthContext";
 import { updateUserScore, getUserProfile } from "../../firebase/userService";
@@ -60,7 +60,10 @@ const getRandomMsg = (arr) => arr[Math.floor(Math.random() * arr.length)];
 export default function GameUI({ onExit, children }) {
   const { currentUser } = useAuth();
 
-  const [score, setScore] = useState(0);
+  const scoreVal = useRef(0);
+  const scoreRefMain = useRef(null);
+  const feverProgressRef = useRef(null);
+
   const [highScore, setHighScore] = useState(() =>
     parseInt(localStorage.getItem("highScore") || "0"),
   );
@@ -75,7 +78,6 @@ export default function GameUI({ onExit, children }) {
 
   const [feverReady, setFeverReady] = useState(false);
   const [feverActive, setFeverActive] = useState(false);
-  const [feverProgress, setFeverProgress] = useState(0);
   const [activeCard, setActiveCard] = useState(null);
 
   useEffect(() => {
@@ -125,7 +127,13 @@ export default function GameUI({ onExit, children }) {
 
   useEffect(() => {
     const handleScore = (newScore) => {
-      setScore(newScore);
+      scoreVal.current = newScore;
+      if (scoreRefMain.current) {
+        scoreRefMain.current.textContent = Math.max(0, Math.floor(newScore))
+          .toString()
+          .padStart(5, "0");
+      }
+
       const currentHigh = parseInt(localStorage.getItem("highScore") || "0");
       if (newScore > currentHigh && !isNewRecord) {
         setIsNewRecord(true);
@@ -147,7 +155,12 @@ export default function GameUI({ onExit, children }) {
     };
 
     const handleFeverActive = (state) => setFeverActive(state);
-    const handleFeverProgress = (progress) => setFeverProgress(progress);
+
+    const handleFeverProgress = (progress) => {
+      if (feverProgressRef.current) {
+        feverProgressRef.current.style.height = `${progress}%`;
+      }
+    };
 
     const handleShowCard = (color) => {
       setActiveCard(color);
@@ -265,6 +278,9 @@ export default function GameUI({ onExit, children }) {
     setIsGameOver(false);
     setIsNewRecord(false);
     setActiveCard(null);
+    scoreVal.current = 0;
+    if (scoreRefMain.current) scoreRefMain.current.textContent = "00000";
+    if (feverProgressRef.current) feverProgressRef.current.style.height = "0%";
     EventBus.emit("restart-game");
   };
 
@@ -276,7 +292,7 @@ export default function GameUI({ onExit, children }) {
     }, 10);
   };
 
-  const displayScore = Math.max(0, Math.floor(score));
+  const displayScore = Math.max(0, Math.floor(scoreVal.current));
   const formattedScore = displayScore.toString().padStart(5, "0");
 
   let scoreColor = "text-white";
@@ -296,7 +312,9 @@ export default function GameUI({ onExit, children }) {
 
         <div
           className={`absolute inset-0 z-30 pointer-events-none bg-zinc-900/60 backdrop-blur-md transform-gpu translate-z-0 will-change-opacity transition-opacity duration-300 ease-in-out ${
-            (isPaused || isGameOver) && countdown === null ? "opacity-100" : "opacity-0"
+            (isPaused || isGameOver) && countdown === null
+              ? "opacity-100"
+              : "opacity-0"
           }`}
         />
 
@@ -316,6 +334,7 @@ export default function GameUI({ onExit, children }) {
                   )}
                 </span>
                 <span
+                  ref={scoreRefMain}
                   className={`text-3xl md:text-4xl font-light tracking-widest drop-shadow-md ${isNewRecord ? "text-amber-400" : "text-white"}`}
                 >
                   {formattedScore}
@@ -354,8 +373,8 @@ export default function GameUI({ onExit, children }) {
               className={`w-3 md:w-4 h-40 md:h-64 rounded-full bg-black/50 border border-white/10 relative overflow-hidden backdrop-blur-md transition-all duration-500 ${feverReady && !feverActive ? "shadow-[0_0_25px_rgba(6,182,212,0.9)] border-cyan-500 scale-105 animate-pulse" : "shadow-lg"}`}
             >
               <div
+                ref={feverProgressRef}
                 className={`absolute bottom-0 w-full transition-all duration-300 ease-out rounded-full ${feverActive ? "bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,1)]" : feverReady ? "bg-cyan-500" : "bg-cyan-400/50"}`}
-                style={{ height: `${feverProgress}%` }}
               />
             </div>
           </div>
