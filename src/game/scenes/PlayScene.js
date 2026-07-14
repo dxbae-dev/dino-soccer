@@ -20,15 +20,17 @@ export default class PlayScene extends Phaser.Scene {
     const isMobile = width < 768;
     const globalScale = isMobile ? 0.8 : 1.3;
 
-    const g = this.add.graphics();
-    g.fillStyle(0xffffff, 0.8);
-    g.fillRect(0, 0, 6, 6);
-    g.generateTexture('dust', 6, 6);
-    g.clear();
-    g.fillStyle(0xfcd34d, 1);
-    g.fillRect(0, 0, 4, 4);
-    g.generateTexture('spark', 4, 4);
-    g.destroy();
+    if (!this.textures.exists('dust')) {
+      const g = this.add.graphics();
+      g.fillStyle(0xffffff, 0.8);
+      g.fillRect(0, 0, 6, 6);
+      g.generateTexture('dust', 6, 6);
+      g.clear();
+      g.fillStyle(0xfcd34d, 1);
+      g.fillRect(0, 0, 4, 4);
+      g.generateTexture('spark', 4, 4);
+      g.destroy();
+    }
 
     this.isGameOver = false;
     this.isPaused = false;
@@ -36,6 +38,7 @@ export default class PlayScene extends Phaser.Scene {
     this.isStarting = false;
     
     this.score = 0;
+    this.highScoreCache = parseInt(localStorage.getItem("highScore") || "0");
     this.lastSavedScore = 0;
     this.lastEmittedScore = -1;
     
@@ -376,9 +379,9 @@ export default class PlayScene extends Phaser.Scene {
 
   saveScore() {
     const finalScore = Math.floor(this.score);
-    const high = parseInt(localStorage.getItem("highScore") || "0");
-    if (!isNaN(finalScore)) {
-      if (finalScore > high) localStorage.setItem("highScore", finalScore);
+    if (!isNaN(finalScore) && finalScore > this.highScoreCache) {
+      this.highScoreCache = finalScore;
+      localStorage.setItem("highScore", finalScore);
     }
   }
 

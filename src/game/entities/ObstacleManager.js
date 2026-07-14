@@ -14,7 +14,7 @@ export default class ObstacleManager {
           end: 3,
         }),
         frameRate: 14,
-        repeat: -1, 
+        repeat: -1,
       });
     }
   }
@@ -33,11 +33,14 @@ export default class ObstacleManager {
       obstacle.setActive(true).setVisible(true);
       obstacle.body.enable = true;
       this.scene.tweens.killTweensOf(obstacle);
-      
+
       obstacle.clearTint();
       obstacle.setAlpha(1);
       obstacle.setAngle(0);
     }
+
+    obstacle.passed = false;
+    obstacle.isCrashingDrone = false;
 
     if (isAerial) {
       const randomHeight = Phaser.Math.Between(40, 80);
@@ -52,61 +55,19 @@ export default class ObstacleManager {
       obstacle.body.setOffset(obstacle.width * 0.2, obstacle.height * 0.3);
 
       if (willCrash) {
-        const isMobile = width < 768;
+        obstacle.isCrashingDrone = true;
+        obstacle.crashFired = false;
+        obstacle.warnFired = false;
+        obstacle.targetGroundY = groundY;
+
         const crashX = Phaser.Math.Between(width / 2 + 50, width);
-        const distanceToCrash = spawnX - crashX;
-        const timeToCrash = (distanceToCrash / Math.abs(currentSpeed)) * 1000;
         
-        const fallDuration = 280;
-        const triggerTime = Math.max(0, timeToCrash - fallDuration);
+        const fallDistance = Math.abs(currentSpeed) * 0.28;
+        
+        obstacle.triggerX = crashX + fallDistance;
+        
+        obstacle.warnX = obstacle.triggerX + (Math.abs(currentSpeed) * 0.2);
 
-        if (isMobile) {
-            obstacle.setTint(0xff4444);
-            this.scene.tweens.add({
-                targets: obstacle,
-                alpha: 0.4,
-                yoyo: true,
-                repeat: -1,
-                duration: 70
-            });
-        } else {
-            const warnTime = Math.max(0, triggerTime - 200);
-            this.scene.time.delayedCall(warnTime, () => {
-                if (obstacle.active) {
-                    obstacle.setTint(0xff4444);
-                    this.scene.tweens.add({
-                        targets: obstacle,
-                        alpha: 0.4,
-                        yoyo: true,
-                        repeat: 2,
-                        duration: 60
-                    });
-                }
-            });
-        }
-
-        this.scene.time.delayedCall(triggerTime, () => {
-            if (obstacle.active) {
-                this.scene.tweens.killTweensOf(obstacle);
-                obstacle.alpha = 1;
-                obstacle.setTint(0xff4444);
-                obstacle.anims.stop();
-                obstacle.setFrame(2);
-                
-                obstacle.body.setSize(obstacle.width * 0.6, obstacle.height * 0.8);
-                obstacle.body.setOffset(obstacle.width * 0.2, obstacle.height * 0.2);
-                
-                const crashAngle = Phaser.Math.Between(70, 110) * Phaser.Math.RND.sign();
-                
-                this.scene.tweens.add({
-                    targets: obstacle,
-                    y: groundY,
-                    angle: crashAngle,
-                    duration: fallDuration,
-                    ease: "Expo.easeIn"
-                });
-            }
-        });
       } else {
         this.scene.tweens.add({
           targets: obstacle,
@@ -128,17 +89,55 @@ export default class ObstacleManager {
       obstacle.body.setOffset(obstacle.width * 0.2, obstacle.height * 0.2);
     }
 
-    obstacle.passed = false;
     obstacle.body.updateFromGameObject();
-
     obstacle.setImmovable(true);
     obstacle.body.allowGravity = false;
     obstacle.setVelocityX(currentSpeed);
   }
 
   update(currentSpeed, playerX, onPassObstacle) {
+    const isMobile = this.scene.scale.width < 768;
+
     this.group.getChildren().forEach((obstacle) => {
       if (!obstacle.active) return;
+
+      if (obstacle.isCrashingDrone) {
+        if (!obstacle.warnFired && obstacle.x <= obstacle.warnX) {
+          obstacle.warnFired = true;
+          obstacle.setTint(0xff4444);
+          
+          this.scene.tweens.add({
+            targets: obstacle,
+            alpha: 0.4,
+            yoyo: true,
+            repeat: isMobile ? -1 : 2,
+            duration: isMobile ? 70 : 60
+          });
+        }
+        
+        if (!obstacle.crashFired && obstacle.x <= obstacle.triggerX) {
+          obstacle.crashFired = true;
+          
+          this.scene.tweens.killTweensOf(obstacle);
+          obstacle.alpha = 1;
+          obstacle.setTint(0xff4444);
+          obstacle.anims.stop();
+          obstacle.setFrame(2);
+          
+          obstacle.body.setSize(obstacle.width * 0.6, obstacle.height * 0.8);
+          obstacle.body.setOffset(obstacle.width * 0.2, obstacle.height * 0.2);
+          
+          const crashAngle = Phaser.Math.Between(70, 110) * Phaser.Math.RND.sign();
+          
+          this.scene.tweens.add({
+            targets: obstacle,
+            y: obstacle.targetGroundY,
+            angle: crashAngle,
+            duration: 280,
+            ease: "Expo.easeIn"
+          });
+        }
+      }
 
       if (!obstacle.passed && obstacle.x < playerX) {
         obstacle.passed = true;

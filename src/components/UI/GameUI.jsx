@@ -296,12 +296,12 @@ export default function GameUI({ onExit, children }) {
 
         <div
           className={`absolute inset-0 z-30 pointer-events-none bg-zinc-900/60 backdrop-blur-md transform-gpu translate-z-0 will-change-opacity transition-opacity duration-300 ease-in-out ${
-            isPaused || isGameOver ? "opacity-100" : "opacity-0"
+            (isPaused || isGameOver) && countdown === null ? "opacity-100" : "opacity-0"
           }`}
         />
 
         <div
-          className={`absolute inset-0 z-20 pointer-events-none transition-opacity duration-300 ease-in-out ${isPaused || isGameOver ? "opacity-0" : "opacity-100"}`}
+          className={`absolute inset-0 z-20 pointer-events-none transition-opacity duration-300 ease-in-out ${(isPaused || isGameOver) && countdown === null ? "opacity-0" : "opacity-100"}`}
         >
           <div className="absolute top-4 left-4 right-4 md:top-6 md:left-6 md:right-6 flex justify-between items-start z-40">
             <div className="flex flex-col gap-3 pointer-events-auto">
